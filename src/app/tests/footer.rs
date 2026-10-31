@@ -174,26 +174,43 @@ fn f1_opens_the_help_map_fresh_each_time() {
 }
 
 #[test]
-fn feedback_opens_an_email_draft_with_the_text() {
+fn feedback_opens_a_github_issue_or_an_email_draft_with_the_text() {
     let (mut harness, _) = harness("feedback");
     start(&mut harness, "Rust");
-    harness.get_by_label("Feedback").click();
-    harness.run();
-    assert!(harness.get_by_label("Write email").accesskit_node().is_disabled(), "nothing to send yet");
-    let text = harness.query_all_by_role(egui::accesskit::Role::MultilineTextInput).find(|n| n.accesskit_node().placeholder() == Some("What happened, or what would you like?")).unwrap();
-    text.click();
-    harness.run();
-    harness.event(egui::Event::Text("The map froze & I lost a node".into()));
-    harness.run();
+    let opened = |harness: &Harness<App>| -> Vec<String> {
+        harness.output().platform_output.commands.iter().filter_map(|c| match c {
+            egui::OutputCommand::OpenUrl(u) => Some(u.url.clone()),
+            _ => None,
+        }).collect()
+    };
+    let write = |harness: &mut Harness<App>| {
+        harness.get_by_label("Feedback").click();
+        harness.run();
+        assert!(harness.get_by_label("Open GitHub issue").accesskit_node().is_disabled(), "nothing to send yet");
+        assert!(shows(harness, "fullstacksushil@gmail.com"), "the address shows, for a computer with no mail app");
+        let text = harness.query_all_by_role(egui::accesskit::Role::MultilineTextInput).find(|n| n.accesskit_node().placeholder() == Some("What happened, or what would you like?")).unwrap();
+        text.click();
+        harness.run();
+        harness.event(egui::Event::Text("The map froze & I lost a node\nIt was big".into()));
+        harness.run();
+    };
+    write(&mut harness);
     shot(&mut harness, "feedback");
+    harness.get_by_label("Open GitHub issue").click_accesskit();
+    harness.step();
+    let urls = opened(&harness);
+    assert_eq!(urls.len(), 1, "{urls:?}");
+    assert!(
+        urls[0].starts_with("https://github.com/fullstacksushil/mindme/issues/new?title=The%20map%20froze%20%26%20I%20lost%20a%20node&body=The%20map%20froze%20%26%20I%20lost%20a%20node%0AIt%20was%20big"),
+        "the first line is the title: {}",
+        urls[0]
+    );
+    harness.run();
+    assert!(harness.state().feedback.is_none(), "it closes once the issue opens");
+
+    write(&mut harness);
     harness.get_by_label("Write email").click_accesskit();
     harness.step();
-    let urls: Vec<String> = harness.output().platform_output.commands.iter().filter_map(|c| match c {
-        egui::OutputCommand::OpenUrl(u) => Some(u.url.clone()),
-        _ => None,
-    }).collect();
-    assert_eq!(urls.len(), 1, "one draft: {urls:?}");
-    assert!(urls[0].starts_with("mailto:feedback@mindme.cc?subject=Mind-Me%20feedback&body=The%20map%20froze%20%26%20I%20lost"), "{}", urls[0]);
-    harness.run();
-    assert!(!shows(&harness, "Write email") && harness.state().feedback.is_none(), "it closes once the draft opens");
+    let urls = opened(&harness);
+    assert!(urls[0].starts_with("mailto:fullstacksushil@gmail.com?subject=Mind-Me%20feedback&body=The%20map%20froze%20%26%20I%20lost"), "{}", urls[0]);
 }

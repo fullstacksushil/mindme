@@ -63,7 +63,7 @@ impl App {
                     if ui.button("Settings").on_hover_text("Ctrl+,").clicked() {
                         (*settings_open, *on_settings) = (true, true);
                     }
-                    if ui.button("Feedback").on_hover_text("Write to the maker by email").clicked() {
+                    if ui.button("Feedback").on_hover_text("Report a problem or ask for something, as a GitHub issue or an email").clicked() {
                         *feedback = Some(String::new());
                     }
                     ui.menu_button("Keys", |ui| {
@@ -95,30 +95,48 @@ impl App {
         help
     }
 
-    /// The Feedback modal. It opens an email draft, since Mind-Me has no server; the user attaches pictures there.
+    /// The Feedback modal. Mind-Me has no server, so it opens a filled-in GitHub issue in the browser or an email draft.
+    /// The issue comes first: a computer with no mail app set, such as a fresh Omarchy, opens nothing for `mailto:`.
     pub(super) fn feedback(&mut self, ctx: &egui::Context) {
         let Some(text) = &mut self.feedback else { return };
         let modal = egui::Modal::new(egui::Id::unique("feedback")).show(ctx, |ui| {
             ui.set_width(420.0);
             heading(ui, "Feedback");
             ui.add(egui::TextEdit::multiline(text).hint_text("What happened, or what would you like?").desired_rows(6).desired_width(f32::INFINITY));
-            ui.label(hint(ui, "This opens an email to the maker. Attach a screenshot or a screen recording there, it helps a lot."));
+            ui.label(hint(ui, "Attach a screenshot or a screen recording to the issue or the email. It helps a lot."));
+            ui.horizontal(|ui| {
+                ui.label(hint(ui, "No mail app? Write to"));
+                ui.add(egui::Label::new(hint(ui, FEEDBACK)).selectable(true));
+            });
             ui.add_space(8.0);
-            ui.horizontal(|ui| (ui.add_enabled(!text.trim().is_empty(), egui::Button::new("Write email")).clicked(), ui.button("Cancel").on_hover_text("Esc").clicked()))
-                .inner
+            ui.horizontal(|ui| {
+                let ready = !text.trim().is_empty();
+                let issue = ui.add_enabled(ready, egui::Button::new("Open GitHub issue")).on_hover_text("Opens in your browser. Needs a GitHub account").clicked();
+                let email = ui.add_enabled(ready, egui::Button::new("Write email")).clicked();
+                (issue, email, ui.button("Cancel").on_hover_text("Esc").clicked())
+            })
+            .inner
         });
-        let (send, cancel) = modal.inner;
-        if send {
-            let body = format!("{text}\n\n--\nMind-Me {} on {}", env!("CARGO_PKG_VERSION"), std::env::consts::OS);
+        let (issue, email, cancel) = modal.inner;
+        let body = format!("{text}\n\n--\nMind-Me {} on {}", env!("CARGO_PKG_VERSION"), std::env::consts::OS);
+        // The first line names the issue, cut at a word when it is long.
+        let first = text.trim().lines().next().unwrap_or_default();
+        let cut: String = first.chars().take(60).collect();
+        let title = if cut.len() < first.len() { format!("{}…", cut.rsplit_once(' ').map_or(cut.as_str(), |(t, _)| t)) } else { cut };
+        if issue {
+            ctx.open_url(egui::OpenUrl::new_tab(format!("{ISSUES}?title={}&body={}", encode(&title), encode(&body))));
+        }
+        if email {
             ctx.open_url(egui::OpenUrl::new_tab(format!("mailto:{FEEDBACK}?subject={}&body={}", encode("Mind-Me feedback"), encode(&body))));
         }
-        if send || cancel || modal.should_close() {
+        if issue || email || cancel || modal.should_close() {
             self.feedback = None;
         }
     }
 }
 
-const FEEDBACK: &str = "feedback@mindme.cc";
+const ISSUES: &str = "https://github.com/fullstacksushil/mindme/issues/new";
+const FEEDBACK: &str = "fullstacksushil@gmail.com";
 
 /// Which figures the footer shows. The config's `"footer"` list sets it, and the footer's menu changes it.
 pub(super) struct Footer {

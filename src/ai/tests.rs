@@ -109,6 +109,8 @@ fn cli_closes_stdin_and_returns_stdout() {
     assert!(super::cli("false", &[], "", timeout, &go).is_err());
     let stop = std::sync::atomic::AtomicBool::new(true);
     assert_eq!(super::cli("sleep", &["30".into()], "", timeout, &stop), Err("stopped".into()), "a stop kills the command");
+    let long = "x".repeat(1 << 20);
+    assert_eq!(super::cli("echo", &["OK".into()], &long, timeout, &go).unwrap(), "OK\n", "a command that never reads its input still answers");
     let started = std::time::Instant::now();
     assert_eq!(super::cli("sleep", &["30".into()], "", std::time::Duration::from_millis(100), &go), Err("timed out".into()));
     assert!(started.elapsed() < std::time::Duration::from_secs(5), "the timeout kills the command");

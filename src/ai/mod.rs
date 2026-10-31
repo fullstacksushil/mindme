@@ -254,7 +254,12 @@ fn cli(command: &str, args: &[String], prompt: &str, timeout: Duration, stop: &A
     let out = drain(child.stdout.take().unwrap());
     let err = drain(child.stderr.take().unwrap());
     // Dropping stdin closes it, which matters: `claude -p`, `ollama run` and `llm` read until end of input.
-    child.stdin.take().unwrap().write_all(prompt.as_bytes()).map_err(|e| format!("{command}: {e}"))?;
+    // A command that never reads its input, such as `echo`, can exit before the write ends. Its output still counts.
+    if let Err(e) = child.stdin.take().unwrap().write_all(prompt.as_bytes())
+        && e.kind() != std::io::ErrorKind::BrokenPipe
+    {
+        return Err(format!("{command}: {e}"));
+    }
     let deadline = Instant::now() + timeout;
     let status = loop {
         match child.try_wait().map_err(|e| e.to_string())? {
