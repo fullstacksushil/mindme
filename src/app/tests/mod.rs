@@ -46,10 +46,14 @@ fn temp(name: &str) -> PathBuf {
 }
 
 fn harness(name: &str) -> (Harness<'static, App>, PathBuf) {
+    harness_with(name, fake_ai())
+}
+
+fn harness_with(name: &str, model: ai::Model) -> (Harness<'static, App>, PathBuf) {
     let path = temp(name);
     let doc = Doc::open(path.clone()).unwrap();
     // A theme or type scale change restyles every widget, which takes egui a frame or two more to settle.
-    let harness = Harness::builder().with_size(Vec2::new(1000.0, 700.0)).with_max_steps(8).build_eframe(move |_| App::new(ai::Config { models: vec![fake_ai()], footer: None, skills: Vec::new(), ghosts: None }, vec![doc], None));
+    let harness = Harness::builder().with_size(Vec2::new(1000.0, 700.0)).with_max_steps(8).build_eframe(move |_| App::new(ai::Config { models: vec![model], footer: None, skills: Vec::new(), ghosts: None }, vec![doc], None));
     (harness, path)
 }
 

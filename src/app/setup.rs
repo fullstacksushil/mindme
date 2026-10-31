@@ -51,7 +51,7 @@ pub(super) struct Setup {
 impl Setup {
     pub(super) fn new(first: bool) -> Setup {
         // Never in tests, so no test can start a real, billed claude call.
-        let claude_found = !cfg!(test) && std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join("claude").is_file()));
+        let claude_found = !cfg!(test) && std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join("claude").is_file() || d.join("claude.exe").is_file()));
         let (tx, ollama) = mpsc::channel();
         // The browser playground has no threads, and never shows setup since it has its model.
         if !cfg!(test) && !cfg!(target_arch = "wasm32") {

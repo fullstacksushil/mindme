@@ -109,6 +109,9 @@ fn cli_closes_stdin_and_returns_stdout() {
     assert!(super::cli("false", &[], "", timeout, &go).is_err());
     let stop = std::sync::atomic::AtomicBool::new(true);
     assert_eq!(super::cli("sleep", &["30".into()], "", timeout, &stop), Err("stopped".into()), "a stop kills the command");
+    let started = std::time::Instant::now();
+    assert_eq!(super::cli("sleep", &["30".into()], "", std::time::Duration::from_millis(100), &go), Err("timed out".into()));
+    assert!(started.elapsed() < std::time::Duration::from_secs(5), "the timeout kills the command");
 }
 
 #[test]
@@ -133,6 +136,8 @@ fn saving_models_keeps_other_keys_and_hides_the_file() {
     let mut old = Model::parse(&serde_json::json!({"name": "Old", "cmd": "llm"})).unwrap();
     old.name = "Renamed".into();
     let from_env = Model::new(Backend::cli("claude -p").unwrap());
+    // A crash can leave a readable `.tmp` behind.
+    std::fs::write(path.with_extension("json.tmp"), "{}").unwrap();
     super::save_models(&path, &[from_env, old, pasted], Some(2)).unwrap();
     let saved: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
     assert_eq!(saved["footer"], serde_json::json!(["cost"]), "other keys stay");

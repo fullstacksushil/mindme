@@ -1,35 +1,86 @@
-# mindme
+# Mind-Me
 
-A small desktop mind map. Type one idea, and the AI suggests branches around it. Click a suggestion to keep it. Or type a topic and map it out whole at once. Maps are plain Markdown files.
+[![Build](https://img.shields.io/github/actions/workflow/status/fullstacksushil/mindme/release.yml?label=build)](https://github.com/fullstacksushil/mindme/actions/workflows/release.yml)
+[![Release](https://img.shields.io/github/v/release/fullstacksushil/mindme?include_prereleases)](https://github.com/fullstacksushil/mindme/releases/latest)
+[![License](https://img.shields.io/github/license/fullstacksushil/mindme)](LICENSE)
+![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)
 
-## Run
+A mind map that thinks with you. Type an idea, and the AI suggests branches. Click the ones you want to keep.
 
-Ready-to-run builds for macOS and Linux are free during the beta. From 1.0 they cost $20 once, for every 1.x release. Building it yourself is free, always:
+![Mind-Me: a map of "Learn Rust", with suggestions around the Ownership node and its note in the side panel](site/img/mindme-dark.png)
+
+## Why use it
+
+- **Start from one idea.** You do not need a plan. Type a word, and the AI offers five branches. Keep the good ones and ignore the rest.
+- **You decide what goes in.** Suggestions are faint until you click them. The map holds only what you chose.
+- **Learn a new topic fast.** Type a topic and press Ctrl+Enter. The AI draws the whole topic as a map, with a short note and sources on each branch.
+- **Go deeper where you want.** On any branch, ask for more detail, examples, or a conversation with the AI.
+- **Your maps are yours.** Each map is a plain text file on your computer, in Markdown, a simple text format. Any text editor can open it, and so can Obsidian. Mind-Me has no account and no server.
+- **Use the AI you already have.** Claude Pro or Max, an API key, or a free model that runs on your own computer.
+
+Try it in your browser first: <https://fullstacksushil.github.io/mindme-site/try/>
+
+## Install
+
+### Download the app
+
+Ready-made apps are free during the beta. From version 1.0, they cost $20 once, for every 1.x release.
+
+| System | File |
+| --- | --- |
+| macOS, Apple silicon | [mindme-macos-arm64.dmg](https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-macos-arm64.dmg) |
+| Windows, x86_64 | [mindme-windows-x86_64.zip](https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-windows-x86_64.zip) |
+| Linux, x86_64 | [mindme-linux-x86_64.AppImage](https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-linux-x86_64.AppImage) or [.tar.gz](https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-linux-x86_64.tar.gz) |
+
+**macOS:** Open the dmg and drag Mind-Me to Applications. The beta is not signed yet. The first time, right-click Mind-Me and choose Open.
+
+**Windows:** Unzip the file and run `Mind-Me.exe`. The beta is not signed yet. If Windows says it protected your PC, click More info, then Run anyway.
+
+**Linux:** Make the file executable, then run it. It needs Ubuntu 22.04, Debian 12, or newer.
 
 ```sh
-# Linux needs these headers: libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev
+chmod +x mindme-linux-x86_64.AppImage
+./mindme-linux-x86_64.AppImage
+```
+
+### Build from the source code
+
+Building it yourself is always free. You need [Rust](https://rustup.rs). On Windows, Rust also asks for the Visual Studio C++ build tools. On Linux, install these packages first: `libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev`.
+
+```sh
+git clone https://github.com/fullstacksushil/mindme
+cd mindme
 cargo build --release
 ./target/release/mindme rust.md go.md
 ```
 
-Each file opens in its own tab. With no path, it opens `map.md`.
+Each file opens in its own tab. With no file name, Mind-Me opens `map.md`.
 
-## Pick a model
+## Pick your AI
 
-With no model set, the app opens on a setup screen: Claude Pro/Max (when `claude` is installed), an API key (Anthropic, OpenAI, OpenRouter or any OpenAI-style URL), Ollama (when it is running), or any command. Test checks that it answers, and Save writes it to `~/.config/mindme/config.json`. Settings, Models renames, removes and adds models later. Or set one by hand:
+The first time you open Mind-Me, it asks you to pick an AI:
 
-| Backend | Set |
-| --- | --- |
-| Any CLI that reads a prompt on stdin | `MINDME_CMD="claude -p"`, `MINDME_CMD="ollama run llama3.2"` or `MINDME_CMD="llm"` |
-| Claude Code, lean, with web access for mapping out (recommended) | `MINDME_CMD="claude -p --output-format json --tools WebSearch,WebFetch --allowedTools WebSearch,WebFetch --strict-mcp-config --setting-sources local --disable-slash-commands"` |
-| Local Ollama over HTTP | `MINDME_MODEL=llama3.2` |
-| Any OpenAI-style API | `MINDME_URL=<chat completions URL> MINDME_MODEL=<model> MINDME_KEY=<key>` |
+- **Claude Pro or Max**, if the `claude` command is installed and you are logged in.
+- **An API key** from Anthropic, OpenAI, OpenRouter, or another service that works like OpenAI.
+- **Ollama**, a free program that runs AI models on your own computer.
+- **Any other command** that reads a question and prints an answer.
 
-`MINDME_CMD` is split on spaces and never run through a shell, so quoted arguments do not work.
+On Windows, install Claude Code with its native installer. Mind-Me cannot start the npm version, which is a `claude.cmd` file.
 
-Plain `claude -p` sends Claude Code's every tool, MCP server, plugin and skill listing with each request, about 7 times the input tokens of the lean command above. With an `ANTHROPIC_API_KEY` you can use `claude -p --bare --output-format json` instead. `--bare` ignores a claude.ai login, so with a subscription it only says "Not logged in".
+Click Test to check that it answers. Click Save to keep it. To add, rename, or remove models later, open Settings, then Models.
 
-To pick between several models at the start of each tab, and to see an approximate cost in the footer, list them in `~/.config/mindme/config.json`:
+## Make it yours
+
+Most choices are in Settings (Ctrl+,):
+
+- **Theme:** Tokyo Night, Catppuccin, Gruvbox, Nord, and more, each in light and dark. The sun or moon button in the footer switches between them.
+- **Size and fonts:** Ctrl+= and Ctrl+- change the size. Pick the text font and the code font in Settings.
+- **Graph:** Change the text size, line thickness, and how far apart the branches sit.
+- **Footer:** Show or hide the token counts and the cost.
+
+### The settings file
+
+For more control, edit `config.json` in your settings folder: `~/.config/mindme/` on macOS and Linux, `%APPDATA%\mindme\` on Windows. This example lists two models and shows the cost of each request:
 
 ```json
 {
@@ -38,63 +89,56 @@ To pick between several models at the start of each tab, and to see an approxima
     { "name": "GPT", "url": "https://api.openai.com/v1/chat/completions", "model": "gpt-5",
       "key_env": "OPENAI_API_KEY", "price": { "in": 1.25, "out": 10, "cached": 0.125 } }
   ],
+  "ghosts": "GPT",
+  "skills": [{ "name": "Plain English", "file": "~/notes/plain-english.md" }],
   "footer": ["model", "in", "out", "total", "cached", "cost"]
 }
 ```
 
-To send ghost suggestions to a cheaper model, add `"ghosts": "<a model's name>"`. Mapping out, Learn more and Discuss keep using the tab's model.
-
-Writing guides (`"skills": [{ "name", "file" }]`) go ahead of every prose request in full. Point them at short digests of the rules, about 200 words, rather than whole skill files.
-
-To choose between Claude models, give each its own entry, such as `{ "name": "Claude Opus", "cmd": "claude -p --model opus --output-format json" }` and the same with `--model haiku`. The footer shows the model that actually answered.
-
-Prices are dollars per million tokens. `claude -p --output-format json` reports its own tokens and cost. The footer's "…" menu hides or shows each figure.
-
-## Use
-
-| Do | How |
+| Setting | What it does |
 | --- | --- |
-| Brainstorm from an idea | Type it, Enter |
-| Map out a whole topic | Type it, Ctrl+Enter |
-| Open a node one level | Click it, or Right or Enter |
-| Fold it again | Left or Enter, or the outline's arrow. The + / − button on top of the outline shows or collapses everything |
-| Walk the tree | Up and Down |
-| Keep a suggestion | Click it, or Down to it then Enter |
-| Add a branch yourself | Tab or + Add beside Branches, type, Enter. Clear Auto-suggest on the start screen to build a map with no AI |
-| More suggestions | M or More ideas. With Auto-suggest off (the default for a mapped-out topic), this is the only way the AI runs |
-| Go to the parent | Esc |
-| Delete a leaf | Delete |
-| Rename | Double-click a node, or edit the name in the topic panel |
-| More ideas on a node | Triple-click it |
-| Node menu | Right-click a node on the canvas or in the outline |
-| Copy or paste a branch | Ctrl+C copies the current node and everything under it as Markdown, Ctrl+V adds the clipboard under it |
-| Undo or redo | Ctrl+Z, and Ctrl+Shift+Z or Ctrl+Y. Up to 100 steps per tab, while the tab is open |
-| Write a note | Edit in the topic panel. Markdown works |
-| Go deeper on a node | Learn more in the topic panel, or `L`. The AI's in-depth explanation is added under the note |
-| Get interviewed before the map starts | Tick Grill me on the start screen. Your answers go with every AI request for the map |
-| Map out a node | Map out in the topic panel, or `G`. The branches merge under the node |
-| Get examples of a node | Examples in the topic panel, or `E`. Two or three examples are added under the note |
-| Talk it over | Discuss at the bottom of the topic panel. Add to note keeps a reply |
-| Look it up | Wikipedia or YouTube in the topic panel header. Wikipedia opens in its own tab |
-| Check a note's sources | The line under the note counts its links and lists dead ones in red. A live link does not prove the page supports the note |
-| Move things | Drag nodes, drag the background, Ctrl+scroll or + and - in the canvas corner to zoom, F or Fit to fit |
-| Spread the graph out | Graph in the canvas corner: text size, link thickness, center, repel and link force, link distance, Rearrange |
-| Hide a panel | « or » in its header. The button to bring it back sits in the canvas corner |
-| Graph only | `\` hides both panels, `\` again brings them back |
-| Read a note | R or Read in the topic panel header: the topic panel alone in a centered column. R or Esc leaves |
-| Open a map | Ctrl+O, or Open… in the + menu or on the start screen. You can pick several |
-| Make a new map | Ctrl+N, or New map… |
-| Export a map | The + menu: Copy map as Markdown, Copy map as JSON, or Export… |
-| Reopen a recent map | The + menu, or the start screen of an empty tab. The last 10 are kept |
-| Tabs | Ctrl+T types a path, Ctrl+Tab switches |
-| Settings | Ctrl+, or Settings in the footer: theme, size, fonts, notes, graph and footer |
-| Change the theme | Settings, Appearance. On Omarchy it follows the Omarchy theme by default. Your own themes go in `~/.config/mindme/themes/<name>.toml`, in Omarchy's `colors.toml` format |
-| Light or dark | The sun or moon button in the footer switches the theme's dark and light versions |
-| Bigger or smaller | Ctrl+= and Ctrl+-, Ctrl+0 resets, or Size in Settings |
-| Stop an AI call | Stop beside the timer of anything waiting |
-| All keys | Keys in the footer |
+| `models` | The AIs you can pick for each tab. Give each one a `cmd` (a command) or a `url` and `model` (a web service). |
+| `price` | Dollars per million tokens. The footer uses it to show the cost. |
+| `ghosts` | Sends the branch suggestions to a cheaper model. Notes, Discuss, and full maps still use the tab's model. |
+| `skills` | Writing guides. The AI follows them when it writes notes. Keep each guide short, about 200 words. |
+| `footer` | The numbers the footer shows. |
+| `themes` folder | Put your own theme in `themes/<name>.toml` in the settings folder, in Omarchy's `colors.toml` format. |
 
-## File format
+### Pick an AI without the settings screen
+
+You can also set the AI with environment variables:
+
+| AI | Set |
+| --- | --- |
+| Any command | `MINDME_CMD="claude -p"` or `MINDME_CMD="ollama run llama3.2"` |
+| Ollama on your computer | `MINDME_MODEL=llama3.2` |
+| A web service that works like OpenAI | `MINDME_URL=<address> MINDME_MODEL=<model> MINDME_KEY=<key>` |
+
+Mind-Me splits `MINDME_CMD` at each space. Quotes inside it do not work.
+
+**Tip for Claude:** This command is faster and costs less, and it lets Claude search the web when it draws a whole topic:
+
+```sh
+MINDME_CMD="claude -p --output-format json --tools WebSearch,WebFetch --allowedTools WebSearch,WebFetch --strict-mcp-config --setting-sources local --disable-slash-commands"
+```
+
+Plain `claude -p` sends about 7 times more text with each request.
+
+## Everyday keys
+
+| Do this | Press |
+| --- | --- |
+| Start a map from an idea | Type it, then Enter |
+| Draw a whole topic at once | Type it, then Ctrl+Enter |
+| Keep a suggestion | Click it |
+| Add your own branch | Tab, type, Enter |
+| Get more suggestions | M |
+| Go to the parent | Esc |
+| Undo or redo | Ctrl+Z, Ctrl+Shift+Z |
+| Stop the AI | Stop, beside the timer |
+| See every key | Keys, in the footer |
+
+## The file format
 
 ```markdown
 # Rust
@@ -104,19 +148,50 @@ Prices are dollars per million tokens. `claude -p --output-format json` reports 
   - Borrowing
 ```
 
-The title is the root, bullets are branches, and `> ` lines are the note of the bullet above them. The app saves after every change. Edit the file in any editor while the app is closed.
+The title is the center of the map. Each bullet is a branch. A line that starts with `> ` is the note of the branch above it. Mind-Me saves after every change. Close the map in Mind-Me before you edit the file in another editor.
 
-## License and name
+## FAQ
 
-Mind-Me is free software under the GNU General Public License, version 3 or later: see `LICENSE`. Third-party licenses are in `THIRD-PARTY-NOTICES.md`. The license covers the code, not the name: a fork you share must use another name and icon.
+**Is it free?**
+Building from the source code is always free. The ready-made apps are free during the beta. From 1.0, they cost $20 once, with every 1.x update. There is no license key.
 
-## Releasing
+**What does Mind-Me send, and where?**
+Mind-Me has no servers, so nothing goes to us. It sends data only to these places:
 
-1. Regenerate the notices when dependencies change. `cargo about` (install with `cargo install cargo-about --features cli`) also fails if a dependency's license is not in `about.toml`'s accepted list:
+- The AI you picked. It gets the names of the current branch and the branches above it, and your Grill me answers. When you ask about a branch, it also gets that branch's note.
+- Wikipedia, to show a card and pictures for the current branch. Turn this off in Settings, Notes.
+- The web pages a note links to. Mind-Me checks once that each `https` link still works.
+- The address of a picture in a note, to show the picture.
+
+The website counts visits with PostHog, without cookies. The app sends nothing to PostHog.
+
+**Can I build a map without AI suggestions?**
+Yes. On the start screen, clear Auto-suggest. Then add every branch yourself with Tab. You still pick an AI the first time you open Mind-Me.
+
+**How is it different from Obsidian?**
+In Obsidian, you make every link yourself. In Mind-Me, the AI suggests branches and you keep what fits. Your maps are plain text files, so they can live in your Obsidian vault too.
+
+**macOS says it cannot check the app. What do I do?**
+The beta is not signed yet. Right-click Mind-Me and choose Open. Or open System Settings, then Privacy & Security, and click Open Anyway.
+
+**Windows says it protected my PC. What do I do?**
+The beta is not signed yet. Click More info, then Run anyway.
+
+**Does it run on an Intel Mac?**
+Not yet as a download. You can build it from the source code.
+
+**Where are my settings?**
+In `~/.config/mindme/` on macOS and Linux, and in `%APPDATA%\mindme\` on Windows. This folder holds `config.json`, your recent files, your graph settings, and your themes.
+
+## License
+
+Mind-Me is free software under the GNU General Public License, version 3 or later. See `LICENSE`. Third-party licenses are in `THIRD-PARTY-NOTICES.md`. The license covers the code, not the name. If you share a changed version, give it a different name and icon.
+
+## For maintainers
+
+1. When dependencies change, make the license notices again. Install the tool with `cargo install cargo-about --features cli`. It fails if a dependency's license is not on the list in `about.toml`.
    `{ cat packaging/notices-head.md; cargo about generate about.hbs; } > THIRD-PARTY-NOTICES.md`
-2. Bump `version` in `Cargo.toml`, commit, then `git tag v0.1.0 && git push --tags`.
-3. The `release` workflow builds the macOS dmg (Apple silicon, unsigned during the beta) and the Linux AppImage and tarball, and publishes them on a GitHub Release, which the website's download buttons point at.
+2. Change `version` in `Cargo.toml` and commit. Then run `git tag v0.1.0 && git push --tags`.
+3. The `release` workflow builds the macOS dmg, the Linux AppImage and tarball, and the Windows zip. It puts them on a GitHub Release, and the website's download buttons link there.
 
-## Docs
-
-`GLOSSARY.md` has the words the app and the code use.
+`GLOSSARY.md` lists the words the app and the code use.

@@ -1,6 +1,8 @@
 //! mindme: type a central idea, the AI suggests ghost branches, click the ones you keep.
 // The browser playground skips files, threads and the network, so their code is unused there.
 #![cfg_attr(target_arch = "wasm32", allow(unused))]
+// No console window behind the app on Windows. Debug builds keep it for their output.
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
 mod ai;
 mod graph;
@@ -55,5 +57,8 @@ fn config_dir() -> Option<PathBuf> {
 #[cfg(not(target_arch = "wasm32"))]
 fn exit(msg: &str) -> ! {
     eprintln!("mindme: {msg}");
+    // A Windows app has no console to print to, so the reason it did not start shows in a dialog.
+    #[cfg(windows)]
+    rfd::MessageDialog::new().set_title("Mind-Me").set_description(msg).set_level(rfd::MessageLevel::Error).show();
     std::process::exit(2)
 }

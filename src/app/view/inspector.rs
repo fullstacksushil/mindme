@@ -13,7 +13,7 @@ impl View {
             ui.label(egui::RichText::new("From the model's own knowledge, no sources cited").color(palette(ui).hint).small()).on_hover_text(hint);
             return;
         }
-        ui.label(egui::RichText::new(sources.line()).color(palette(ui).hint).small()).on_hover_text("A reachable link does not prove the page supports the note.");
+        ui.label(egui::RichText::new(sources.line()).color(palette(ui).hint).small()).on_hover_text("A reachable link does not prove the page supports the note. Plain http links and local addresses are not checked.");
         for (url, why) in sources.dead {
             ui.label(egui::RichText::new(format!("Dead: {url} ({why})")).color(palette(ui).fail).small());
         }

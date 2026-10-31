@@ -21,6 +21,49 @@ fn stop_kills_a_waiting_call_and_offers_a_retry() {
     assert_eq!(doc(&harness).in_flight, 0, "the hanging command was killed, not left running for 30 s");
 }
 
+/// An OpenAI-style API that answers its requests in order, each only once `go` says so.
+fn held_api() -> (ai::Model, mpsc::Sender<()>) {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let url = format!("http://{}/v1/chat/completions", listener.local_addr().unwrap());
+    let (go, held) = mpsc::channel::<()>();
+    std::thread::spawn(move || {
+        let body = r#"{"choices": [{"message": {"content": "{\"note\": \"About it.\", \"nodes\": [\"Alpha\", \"Beta\"]}"}}]}"#;
+        for mut stream in listener.incoming().flatten() {
+            let _ = stream.read(&mut [0; 65536]);
+            if held.recv().is_err() {
+                return;
+            }
+            let _ = write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+        }
+    });
+    (ai::Model::new(ai::Backend::Http { url, model: "held".into(), key: None }), go)
+}
+
+#[test]
+fn a_stopped_request_answering_late_never_lands_on_the_retry() {
+    // An HTTP request runs to its end after a stop, so its reply comes back while the retry waits.
+    let (model, go) = held_api();
+    let (mut harness, _) = harness_with("stop-retry", model);
+    harness.run();
+    harness.get_by_role(egui::accesskit::Role::TextInput).type_text("Rust");
+    harness.key_press(Key::Enter);
+    wait_for(&mut harness, "thinking…");
+    harness.get_by_label("Stop").click();
+    wait_for(&mut harness, "suggestion: retry: stopped");
+    harness.get_by_label("suggestion: retry: stopped").click_accesskit();
+    wait_for(&mut harness, "thinking…");
+    go.send(()).unwrap();
+    for _ in 0..30 {
+        harness.step();
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(doc(&harness).in_flight, 1, "the stopped request answered");
+    assert!(shows(&harness, "thinking…") && !shows(&harness, "suggestion: Alpha"), "its reply did not land on the retry");
+    go.send(()).unwrap();
+    wait_for(&mut harness, "suggestion: Alpha");
+}
+
 #[test]
 fn delete_and_more_ideas_ask_first() {
     let (mut harness, path) = harness("confirm");

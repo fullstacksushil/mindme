@@ -96,6 +96,9 @@ pub(super) fn fetch_article(title: &str, _: &egui::Context) -> Result<String, &'
 
 /// Sends `HEAD` first. Some servers refuse `HEAD`, so those receive a `GET`.
 pub(super) fn check(url: &str, _: &egui::Context) -> Link {
+    if !checkable(url) {
+        return Link::Unchecked;
+    }
     if cfg!(test) {
         return Link::Dead("offline in tests".into());
     }
@@ -109,6 +112,19 @@ pub(super) fn check(url: &str, _: &egui::Context) -> Link {
         Ok(code) => Link::Dead(format!("HTTP {code}")),
         Err(e) => Link::Dead(e.to_string()),
     }
+}
+
+/// Only `https://` links to a named host. A note can come from a shared file, so the app must not request
+/// addresses on the user's own machine or network, such as `http://192.168.1.1/...` or `https://localhost/...`.
+/// shortcut: a public name that resolves to a private address still gets checked, resolve it first if that matters
+pub(super) fn checkable(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else { return false };
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
+    let host = authority.rsplit_once('@').map_or(authority, |(_, h)| h);
+    let host = host.rsplit_once(':').map_or(host, |(h, _)| h).trim_end_matches('.').to_lowercase();
+    // Digits and dots also catch the short forms resolvers accept, such as `127.1` and `2130706433`.
+    let ip = host.starts_with('[') || host.chars().all(|c| c.is_ascii_digit() || c == '.');
+    !(ip || host == "localhost" || host.ends_with(".localhost"))
 }
 
 pub(super) fn fetch(query: &str, ctx: &egui::Context) -> Result<Vec<Card>, &'static str> {

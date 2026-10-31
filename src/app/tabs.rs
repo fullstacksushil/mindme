@@ -116,9 +116,8 @@ impl App {
             });
         }
         if let Some(i) = close {
-            let mut doc = self.docs.remove(i);
-            // Replies that landed this frame are not on disk yet.
-            doc.autosave();
+            // Replies that landed this frame, and the note being typed, are not on disk yet.
+            self.docs.remove(i).flush();
             if self.active > i || self.active == self.docs.len() {
                 self.active -= 1;
             }

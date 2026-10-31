@@ -110,6 +110,8 @@ pub enum Link {
     Checking,
     Ok,
     Dead(String),
+    /// Plain `http`, or an address on the user's own machine or network, which the app never requests.
+    Unchecked,
 }
 
 pub type Links = Cache<Link>;

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mind-Me: keep what you learn from AI</title>
-<meta name="description" content="A mind map for macOS and Linux. The AI suggests, you decide what's worth keeping. Every map is a Markdown file you own.">
+<meta name="description" content="A mind map for macOS, Windows and Linux. The AI suggests, you decide what's worth keeping. Every map is a Markdown file you own.">
 <link rel="icon" href="img/icon.png">
 <link rel="stylesheet" href="style.css">
 <meta property="og:title" content="Mind-Me: keep what you learn from AI">
@@ -12,9 +12,15 @@
 <meta property="og:image" content="https://mindme.cc/img/tokyo-night.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<!-- Website visits only, through PostHog. No cookies (memory persistence), no people profiles, no session recordings,
+     so a visitor's typed API key in the playground can never be recorded. The app itself sends nothing here. -->
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}p||((p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",p.onerror=function(){p=null},(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r));var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],Object.defineProperty(u,"toString",{configurable:!0,enumerable:!0,writable:!0,value:function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e}}),Object.defineProperty(u.people,"toString",{configurable:!0,enumerable:!0,writable:!0,value:function(){return u.toString(1)+".people (stub)"}}),o="init capture register register_once register_for_session unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group identify setPersonProperties setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags resetGroups onFeatureFlags addFeatureFlagsHandler onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_1ZZHqZScyxHBk8zSAjuxVLgKlADmIoLUsEjz6JnHrKf', { api_host: 'https://us.i.posthog.com', persistence: 'memory', person_profiles: 'identified_only', disable_session_recording: true })
+</script>
 </head>
 <body>
-<!-- Downloads come from this repo's latest release, under fixed file names. The four links marked
+<!-- Downloads come from this repo's latest release, under fixed file names. The five links marked
      STORE move to the store's product page once it exists. -->
 
 <header class="top">
@@ -84,7 +90,7 @@
       <h3>Build it yourself</h3>
       <p class="amount">Free <span>always</span></p>
       <p>Mind-Me is open source under the GPL-3.0. Clone it and run <code>cargo build --release</code>. That is the deal, not a loophole.</p>
-      <a class="button" href="https://github.com/fullstacksushil/mindme#run">Build instructions</a>
+      <a class="button" href="https://github.com/fullstacksushil/mindme#build-from-the-source-code">Build instructions</a>
     </div>
   </div>
 </section>
@@ -96,9 +102,10 @@
     <p class="actions">
       <a class="button primary" href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-macos-arm64.dmg">macOS (Apple silicon)</a><!-- STORE -->
       <a class="button primary" href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-linux-x86_64.AppImage">Linux (AppImage)</a><!-- STORE -->
+      <a class="button primary" href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-windows-x86_64.zip">Windows (zip)</a><!-- STORE -->
       <a class="button" href="https://github.com/fullstacksushil/mindme/releases/latest">Release notes</a>
     </p>
-    <p class="small">Linux also comes as a <a href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-linux-x86_64.tar.gz">tarball</a>. Intel Macs can build it from source for now.</p>
+    <p class="small">Linux also comes as a <a href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-linux-x86_64.tar.gz">tarball</a>. Intel Macs can build it from source for now. On Windows, unzip it and run Mind-Me.exe.</p>
   </div>
 </section>
 
@@ -121,18 +128,19 @@
     <ul>
       <li><strong>The AI you picked:</strong> the names of the current node and the nodes above it, and your Grill me answers. Learn more, Examples and Discuss also send that node's note and your recent Discuss messages. Writing guides you turned on go with them.</li>
       <li><strong>Wikipedia and Wikimedia Commons:</strong> the names of the current node and its parent, to find its card and pictures. To stop this, turn off Wikipedia card in Settings, Notes.</li>
-      <li><strong>The sites a note links to:</strong> Mind-Me opens each link once, to check that it still works.</li>
+      <li><strong>The sites a note links to:</strong> Mind-Me opens each <code>https</code> link once, to check that it still works. It never opens links to your own computer or network.</li>
       <li><strong>The address of a picture in a note:</strong> Mind-Me downloads the picture to show it.</li>
     </ul>
+    <p>This website counts visits with PostHog, without cookies. The app sends nothing to PostHog.</p>
   </details>
   <details><summary>macOS says it cannot check Mind-Me. What do I do?</summary>
     <p>Beta builds are not signed yet. The first time, right-click Mind-Me and choose Open. Or open System Settings, go to Privacy &amp; Security, and click Open Anyway. Signed builds come with version 1.0.</p>
   </details>
+  <details><summary>Windows says it protected my PC. What do I do?</summary>
+    <p>Beta builds are not signed yet, so SmartScreen warns the first time. Click More info, then Run anyway. Signed builds come with version 1.0.</p>
+  </details>
   <details><summary>Does the $20 include updates?</summary>
     <p>Yes. $20 gets you every 1.x release, and you keep each one. There is no license key. Version 2.0 may be a paid upgrade.</p>
-  </details>
-  <details><summary>Does it run on Windows?</summary>
-    <p>Not yet. macOS and Linux come first.</p>
   </details>
 </section>
 </main>

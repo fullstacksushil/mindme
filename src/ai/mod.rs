@@ -239,7 +239,11 @@ fn cli_reply(out: String, price: &Price) -> Result<(String, Usage), String> {
 }
 
 fn cli(command: &str, args: &[String], prompt: &str, timeout: Duration, stop: &AtomicBool) -> Result<String, String> {
-    let mut child = Command::new(command)
+    let mut child = Command::new(command);
+    // A window app's child opens a console window of its own on Windows unless told not to.
+    #[cfg(windows)]
+    std::os::windows::process::CommandExt::creation_flags(&mut child, 0x0800_0000); // CREATE_NO_WINDOW
+    let mut child = child
         .args(args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

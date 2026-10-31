@@ -24,10 +24,10 @@ pub struct Skill {
 }
 
 impl Skill {
-    /// `{"name", "file", "on"?}`. Reads the file once, here, and `~/` starts at the home folder.
+    /// `{"name", "file", "on"?}`. Reads the file once, here, and `~/` starts at the home folder, `USERPROFILE` on Windows.
     pub(super) fn parse(entry: &Value) -> Result<Skill, String> {
         let file = entry["file"].as_str().ok_or("a skill needs \"file\"")?;
-        let path = match (file.strip_prefix("~/"), env::var_os("HOME")) {
+        let path = match (file.strip_prefix("~/"), env::var_os("HOME").or_else(|| env::var_os("USERPROFILE"))) {
             (Some(rest), Some(home)) => PathBuf::from(home).join(rest),
             _ => PathBuf::from(file),
         };
@@ -74,9 +74,13 @@ pub fn save_models(path: &Path, models: &[Model], ghosts: Option<usize>) -> io::
         fs::create_dir_all(dir)?;
     }
     let tmp = path.with_extension("json.tmp");
-    fs::write(&tmp, serde_json::to_string_pretty(&config)?)?;
+    // A new file created private, so no other user can read the keys before the rename. A leftover one could keep its old mode.
+    let _ = fs::remove_file(&tmp);
+    let mut file = fs::OpenOptions::new();
+    file.write(true).create_new(true);
     #[cfg(unix)]
-    fs::set_permissions(&tmp, std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
+    std::os::unix::fs::OpenOptionsExt::mode(&mut file, 0o600);
+    io::Write::write_all(&mut file.open(&tmp)?, serde_json::to_string_pretty(&config)?.as_bytes())?;
     fs::rename(&tmp, path)
 }
 

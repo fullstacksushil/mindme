@@ -174,6 +174,22 @@ fn recent_files_survive_a_restart_and_open_into_the_blank_tab() {
 }
 
 #[test]
+fn graph_settings_that_failed_to_save_are_saved_once_they_can_be() {
+    // A file where the config folder should be, so the folder cannot be made.
+    let dir = temp("blocked-config");
+    fs::write(&dir, "").unwrap();
+    let doc = Doc::open(temp("blocked-map")).unwrap();
+    let mut harness = Harness::builder().build_eframe(|_| App::new(ai::Config { models: vec![fake_ai()], footer: None, skills: Vec::new(), ghosts: None }, vec![doc], Some(dir.clone())));
+    harness.state_mut().settings.wiki = !harness.state().settings.wiki;
+    harness.run();
+    assert_eq!(harness.state().open_error.as_deref(), Some("could not save the graph settings"));
+    fs::remove_file(&dir).unwrap();
+    harness.run();
+    assert_eq!(GraphSettings::load(&dir.join("graph.json")).wiki, harness.state().settings.wiki, "the next frame retried");
+    let _ = fs::remove_dir_all(&dir);
+}
+
+#[test]
 fn the_plus_menu_copies_the_map_as_markdown_or_json() {
     let (mut harness, _) = harness("export");
     start(&mut harness, "Rust");

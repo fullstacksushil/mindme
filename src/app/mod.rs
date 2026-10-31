@@ -263,6 +263,12 @@ impl App {
 }
 
 impl eframe::App for App {
+    fn on_exit(&mut self) {
+        for doc in &mut self.docs {
+            doc.flush();
+        }
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.look(ui.ctx());
         // The context's new style reaches `Ui`s from the next frame; this one was copied before it.
@@ -339,11 +345,12 @@ impl eframe::App for App {
         }
         // Saved when the user releases a slider, not on every frame of the drag.
         if self.settings != self.saved_settings && !ui.input(|i| i.pointer.any_down()) {
-            self.saved_settings = self.settings.clone();
-            if let Some(dir) = &self.dir
-                && fs::create_dir_all(dir).and_then(|()| self.settings.save(&dir.join("graph.json"))).is_err()
-            {
-                self.open_error = Some("could not save the graph settings".into());
+            match &self.dir {
+                // Left unsaved, so the next frame retries.
+                Some(dir) if fs::create_dir_all(dir).and_then(|()| self.settings.save(&dir.join("graph.json"))).is_err() => {
+                    self.open_error = Some("could not save the graph settings".into());
+                }
+                _ => self.saved_settings = self.settings.clone(),
             }
         }
     }

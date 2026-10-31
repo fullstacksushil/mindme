@@ -220,7 +220,13 @@ impl View {
     pub(super) fn sync(&mut self, ui: &egui::Ui, layout: &Layout, visible: &[NodeId], settings: &GraphSettings) {
         let current = Body::Node(layout.current);
         let size = |text: &str, depth: usize, ghost: bool| label(ui.painter(), text, label_font(depth, settings.text), ghost, Color32::WHITE).size() + Vec2::new(20.0, 10.0);
-        let below = layout.ancestors(layout.current).count() + 1;
+        // One pass, since parents come before their children: this runs every frame while the graph moves.
+        let mut depth = std::collections::HashMap::new();
+        for n in &layout.nodes {
+            depth.insert(n.id, n.parent.map_or(0, |p| depth[&p] + 1));
+        }
+        let below = depth[&layout.current] + 1;
+        let visible: std::collections::HashSet<_> = visible.iter().collect();
         let mut specs: Vec<Spec<Body>> = layout
             .nodes
             .iter()
@@ -228,7 +234,7 @@ impl View {
             .map(|n| Spec {
                 key: Body::Node(n.id),
                 link: n.parent.map(|p| (Body::Node(p), settings.distance)),
-                size: size(n.text.as_str(), layout.ancestors(n.id).count(), false),
+                size: size(n.text.as_str(), depth[&n.id], false),
             })
             .collect();
         specs.extend(layout.ghosts.iter().enumerate().map(|(i, slot)| {

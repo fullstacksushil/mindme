@@ -1,4 +1,4 @@
-use super::fetch::{bitmaps, markdown, parse};
+use super::fetch::{bitmaps, checkable, markdown, parse};
 use super::*;
 
 #[test]
@@ -117,6 +117,31 @@ fn the_sources_line_counts_links_by_state() {
     assert_eq!(sources.line(), "Sources: 3 links, 1 reachable, 1 dead, 1 checking");
     assert_eq!(sources.dead, [("https://b.org".to_owned(), "HTTP 404".to_owned())]);
     assert_eq!(lookup.sources("See https://a.org.", &ctx).line(), "Sources: 1 link, 1 reachable");
+    lookup.links.got.insert("http://d.org".into(), Link::Unchecked);
+    assert_eq!(lookup.sources("https://a.org http://d.org", &ctx).line(), "Sources: 2 links, 1 reachable, 1 not checked");
+}
+
+#[test]
+fn only_https_links_to_named_hosts_are_checked() {
+    for url in ["https://doc.rust-lang.org/book/", "https://en.wikipedia.org/wiki/Rust_(language)", "https://user@example.com:8443/x"] {
+        assert!(checkable(url), "{url}");
+    }
+    let local = [
+        "http://example.com/",
+        "http://192.168.1.1/reboot",
+        "https://192.168.1.1/",
+        "https://127.1/",
+        "https://2130706433/",
+        "https://[::1]:8080/",
+        "https://localhost:3000/",
+        "https://LOCALHOST./",
+        "https://app.localhost/",
+        "https://evil@10.0.0.1/",
+        "https:///nohost",
+    ];
+    for url in local {
+        assert!(!checkable(url), "{url}");
+    }
 }
 
 #[test]

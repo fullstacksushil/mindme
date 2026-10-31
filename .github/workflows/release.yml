@@ -1,4 +1,4 @@
-# Builds the macOS dmg and the Linux AppImage and tarball when a version tag is pushed (git tag v0.1.0 && git push --tags),
+# Builds the macOS dmg, the Linux AppImage and tarball, and the Windows zip when a version tag is pushed (git tag v0.1.0 && git push --tags),
 # or by hand from the Actions tab. A tag publishes them on a GitHub Release under the fixed names the website links to.
 name: release
 
@@ -12,7 +12,7 @@ jobs:
     # The oldest supported runner, so the binary's glibc needs run on Ubuntu 22.04, Debian 12 and newer.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev
@@ -24,7 +24,7 @@ jobs:
           version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           mkdir -p dist/mindme && cp target/release/mindme LICENSE THIRD-PARTY-NOTICES.md packaging/mindme.desktop assets/icon.png dist/mindme/
           tar -C dist -czf "dist/mindme-$version-linux-x86_64.tar.gz" mindme
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: |
@@ -34,7 +34,7 @@ jobs:
   macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       # Apple silicon only, the runner's own architecture. Intel Macs build from source for now.
@@ -52,20 +52,40 @@ jobs:
           codesign --verify --deep --strict --verbose=2 dist/dmg/Mind-Me.app
           ln -s /Applications dist/dmg/Applications
           hdiutil create -volname Mind-Me -srcfolder dist/dmg -ov -format UDZO dist/Mind-Me.dmg
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: macos
           path: dist/*.dmg
 
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --locked
+      # shortcut: a zip to unpack and run, unsigned, so SmartScreen warns on first run; an installer and code signing before 1.0.
+      - name: Zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/Mind-Me | Out-Null
+          Copy-Item target/release/mindme.exe dist/Mind-Me/Mind-Me.exe
+          Copy-Item LICENSE, THIRD-PARTY-NOTICES.md dist/Mind-Me/
+          Compress-Archive -Path dist/Mind-Me -DestinationPath dist/mindme-windows-x86_64.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: dist/*.zip
+
   release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [linux, macos]
+    needs: [linux, macos, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: runs
       - name: Publish
@@ -74,6 +94,7 @@ jobs:
           cp "$(find runs/macos -name '*.dmg')" up/mindme-macos-arm64.dmg
           cp "$(find runs/linux -name '*.AppImage')" up/mindme-linux-x86_64.AppImage
           cp "$(find runs/linux -name '*.tar.gz')" up/mindme-linux-x86_64.tar.gz
+          cp "$(find runs/windows -name '*.zip')" up/mindme-windows-x86_64.zip
           gh release create "$GITHUB_REF_NAME" --generate-notes --title "Mind-Me $GITHUB_REF_NAME beta" up/*
         env:
           GH_TOKEN: ${{ github.token }}

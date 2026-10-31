@@ -16,6 +16,30 @@ fn edit_a_note_in_the_inspector() {
 }
 
 #[test]
+fn a_note_being_typed_is_saved_when_its_tab_or_the_window_closes() {
+    let type_note = |harness: &mut Harness<App>, text: &str| {
+        harness.get_by_label("Edit").click();
+        harness.run();
+        harness.query_all_by_role(egui::accesskit::Role::MultilineTextInput).last().unwrap().type_text(text);
+        harness.run();
+    };
+    let (mut h, path) = harness("note-exit");
+    start(&mut h, "Rust");
+    type_note(&mut h, "Typed, never Done.");
+    eframe::App::on_exit(h.state_mut());
+    assert_eq!(fs::read_to_string(&path).unwrap(), "# Rust\n> About it.Typed, never Done.\n");
+
+    let (mut harness, path) = harness("note-close");
+    start(&mut harness, "Rust");
+    harness.state_mut().docs.push(Doc::open(temp("note-close-other")).unwrap());
+    type_note(&mut harness, "Typed, then closed.");
+    harness.get_all_by_label("×").next().unwrap().click();
+    harness.run();
+    assert_eq!(harness.state().docs.len(), 1);
+    assert_eq!(fs::read_to_string(&path).unwrap(), "# Rust\n> About it.Typed, then closed.\n");
+}
+
+#[test]
 fn learn_more_adds_an_in_depth_note() {
     let (mut harness, path) = harness("learn");
     start(&mut harness, "Rust");

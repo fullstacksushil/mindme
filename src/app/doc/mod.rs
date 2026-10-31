@@ -14,7 +14,7 @@ mod interview;
 mod request;
 
 pub(super) use interview::{Interview, Step};
-use request::{Msg, Request};
+use request::{Msg, Reply, Request};
 
 /// `Ok(None)` starts an empty map: the file is missing or blank.
 /// A non-blank file with no `# title` is an error, because autosave would overwrite it.
@@ -66,8 +66,8 @@ pub(crate) struct Doc {
     /// Index into the app's models. Picked on the start screen.
     pub(super) model: usize,
     pub(super) usage: ai::Usage,
-    tx: mpsc::Sender<(ai::Usage, Msg)>,
-    rx: mpsc::Receiver<(ai::Usage, Msg)>,
+    tx: mpsc::Sender<(ai::Usage, Reply)>,
+    rx: mpsc::Receiver<(ai::Usage, Reply)>,
     stops: Vec<request::Running>,
 }
 
@@ -138,9 +138,13 @@ impl Doc {
 
     /// Applies every reply that arrived since the last frame, whether or not this tab is showing.
     pub(super) fn receive(&mut self) {
-        while let Ok((usage, msg)) = self.rx.try_recv() {
+        while let Ok((usage, (stopped, msg))) = self.rx.try_recv() {
             self.in_flight -= 1;
             self.usage += usage;
+            // Every Stop already updated the screen, and the late reply would land on whatever was asked next.
+            if stopped.load(std::sync::atomic::Ordering::Relaxed) {
+                continue;
+            }
             match (msg, &mut self.stage) {
                 (Msg::Map(ask, result), Stage::Map(map)) => map.receive(ask, result),
                 // Only while mapping out, so a reply after a stop never replaces what the user did next.
@@ -237,6 +241,14 @@ impl Doc {
                 self.stage = Stage::MappingOut(topic);
             }
         }
+    }
+
+    /// Saves the note being typed, which otherwise reaches the map only when its box loses focus. For a closing tab or window.
+    pub(super) fn flush(&mut self) {
+        if let (Stage::Map(map), Some((id, note))) = (&mut self.stage, self.view.note_edit.take()) {
+            map.step(vec![Cmd::SetNote(id, note)]);
+        }
+        self.autosave();
     }
 
     /// shortcut: renders the Markdown every frame, gate it on applied commands if 500+ node maps stutter.

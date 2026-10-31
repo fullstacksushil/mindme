@@ -78,6 +78,9 @@ impl Request {
     }
 }
 
+/// A reply, with its request's stop flag, so a stopped request's late reply is dropped.
+pub(super) type Reply = (Arc<AtomicBool>, Msg);
+
 pub(super) enum Msg {
     Map(Ask, Result<Answer, String>),
     Outline(Result<Map, String>),
@@ -105,7 +108,8 @@ impl Doc {
         // A finished worker has dropped its copy.
         self.stops.retain(|(_, s)| Arc::strong_count(s) > 1);
         self.stops.push((request.waits(), stop.clone()));
-        shared.models[model].spawn(prompt, wants.timeout(), ctx, &self.tx, stop, |raw| request.reply(raw));
+        let stopped = stop.clone();
+        shared.models[model].spawn(prompt, wants.timeout(), ctx, &self.tx, stop, move |raw| (stopped, request.reply(raw)));
         self.in_flight += 1;
     }
 }

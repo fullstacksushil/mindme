@@ -58,6 +58,10 @@ _Avoid_: Rejected ghost, discarded ghost
 Whether a node that becomes current asks for ghosts by itself.
 _Avoid_: Auto mode
 
+**Stop**:
+Giving up an AI request still on its way. A reply that arrives anyway is ignored.
+_Avoid_: Cancel, abort
+
 ## Growing a map
 
 **Brainstorm**:

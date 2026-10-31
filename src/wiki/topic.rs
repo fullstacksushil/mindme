@@ -21,6 +21,7 @@ pub struct Sources {
     pub reachable: usize,
     pub dead: Vec<(String, String)>,
     pub checking: usize,
+    pub unchecked: usize,
 }
 
 impl Lookup {
@@ -60,12 +61,13 @@ impl Lookup {
 
     pub fn sources(&mut self, note: &str, ctx: &egui::Context) -> Sources {
         let urls = links(note);
-        let mut sources = Sources { total: urls.len(), reachable: 0, dead: Vec::new(), checking: 0 };
+        let mut sources = Sources { total: urls.len(), reachable: 0, dead: Vec::new(), checking: 0, unchecked: 0 };
         for url in urls {
             match self.links.link(url, ctx) {
                 Link::Ok => sources.reachable += 1,
                 Link::Dead(why) => sources.dead.push((url.to_owned(), why.clone())),
                 Link::Checking => sources.checking += 1,
+                Link::Unchecked => sources.unchecked += 1,
             }
         }
         sources
@@ -77,6 +79,9 @@ impl Sources {
         let mut line = format!("Sources: {} link{}, {} reachable", self.total, if self.total == 1 { "" } else { "s" }, self.reachable);
         if !self.dead.is_empty() {
             line += &format!(", {} dead", self.dead.len());
+        }
+        if self.unchecked > 0 {
+            line += &format!(", {} not checked", self.unchecked);
         }
         if self.checking > 0 {
             line += &format!(", {} checking", self.checking);
