@@ -1,0 +1,23 @@
+# cargo-about: the licenses Mind-Me's dependencies may use. All are compatible with GPL-3.0-or-later; a dependency
+# under any other license makes `cargo about generate` fail, which is the license check.
+accepted = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+    "MIT-0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "BSL-1.0",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "MPL-2.0",
+    "CC0-1.0",
+    "Unlicense",
+    "OFL-1.1",
+    "Ubuntu-font-1.0",
+    "LicenseRef-UFL-1.0",
+    "CDLA-Permissive-2.0",
+    "GPL-3.0-or-later",
+]

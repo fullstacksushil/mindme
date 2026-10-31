@@ -1,0 +1,35 @@
+# Publishes site/ and the browser playground to GitHub Pages at mindme.cc when they change on master.
+# Needs Settings → Pages → Source set to "GitHub Actions" and the custom domain set to mindme.cc.
+name: pages
+
+on:
+  push:
+    branches: [master]
+    paths: ["site/**", "src/**", "Cargo.*", "scripts/web.sh"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      # The browser playground at /try/, built from the app's code.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install wasm-bindgen-cli --locked --version "$(grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')"
+      - run: sh scripts/web.sh
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

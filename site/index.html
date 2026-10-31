@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mind-Me: keep what you learn from AI</title>
+<meta name="description" content="A mind map for macOS and Linux. The AI suggests, you decide what's worth keeping. Every map is a Markdown file you own.">
+<link rel="icon" href="img/icon.png">
+<link rel="stylesheet" href="style.css">
+<meta property="og:title" content="Mind-Me: keep what you learn from AI">
+<meta property="og:description" content="Talking to AI is like a late-night conversation at a party. Some of it's true. Some of it's made up. None of it sticks.">
+<meta property="og:image" content="https://mindme.cc/img/tokyo-night.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<!-- Downloads come from this repo's latest release, under fixed file names. The four links marked
+     STORE move to the store's product page once it exists. -->
+
+<header class="top">
+  <a class="brand" href="#"><img src="img/icon.png" alt="" width="28" height="28"> Mind-Me</a>
+  <nav><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#releases">Releases</a><a href="#faq">FAQ</a></nav>
+</header>
+
+<main>
+<section class="hero">
+  <div class="pitch">
+    <h1><span class="setup">Talking to AI is like a late&#8209;night conversation at a party.</span> Some of it's true.<br> Some of it's made&nbsp;up.<br> None of it sticks.</h1>
+    <p class="lead">This time, you decide what's worth keeping.</p>
+    <p class="actions">
+      <a class="button primary" href="try/">Try it in your browser</a>
+      <a class="button" href="#releases">Start your first map</a><!-- STORE -->
+    </p>
+    <p class="small">Not a notes app. A place to work out what you think.</p>
+  </div>
+  <figure class="trail">
+    <img src="img/mindme-dark-detail.png" width="520" height="400" alt="A map about learning Rust. Ownership is the current node, with kept branches in solid boxes and four suggestions in faint italics around it.">
+  </figure>
+</section>
+
+<section id="how">
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><h3>Type an idea</h3><p>One idea or topic. Brainstorm it a few branches at a time, map it out whole at once, or start from a template such as Pros and cons or SWOT.</p></li>
+    <li><h3>Keep what fits</h3><p>The AI suggests branches as ghosts. Keep the good ones with a click, ask for more with M, or add your own with Tab. Nothing is saved until you keep it.</p></li>
+    <li><h3>Grow notes with sources</h3><p>Every node has a Markdown note. Learn more and Examples add depth with links you can check, and Mind-Me marks the dead ones.</p></li>
+  </ol>
+  <figure class="shot">
+    <!-- Never autoplays, so it needs no pause control and respects reduced motion. -->
+    <video controls playsinline preload="none" poster="img/demo-poster.jpg" width="1920" height="1080">
+      <source src="img/demo.mp4" type="video/mp4">
+      <a href="img/demo.mp4">Watch the demo video</a>
+    </video>
+    <figcaption>One minute: keep suggestions about Stoicism, map out sourdough bread, and open the Markdown file.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>What's different</h2>
+  <div class="grid">
+    <div class="card"><h3>Plain Markdown files</h3><p>A map is a <code>.md</code> file on your disk: the title is the root, bullets are branches, notes sit under them. Any editor can open it. No account, no cloud.</p></div>
+    <div class="card"><h3>Bring your own AI</h3><p>Use the Claude subscription you already pay for, an API key, or a free model running on your computer with Ollama. Mind-Me runs no servers.</p></div>
+    <div class="card"><h3>Themes you already know</h3><p>Tokyo Night, Catppuccin, Gruvbox, Nord, Everforest, Rosé Pine, Flexoki and more, in light and dark. On Omarchy it follows your system theme.</p></div>
+    <div class="card"><h3>Native and fast</h3><p>Written in Rust. Starts in a blink, uses no CPU when idle, and works from the keyboard: arrows, Tab, Enter and M.</p></div>
+  </div>
+  <div class="themes">
+    <figure><a href="img/mindme-dark.png"><img src="img/mindme-dark-detail.png" width="520" height="400" alt="The Ownership branch and its suggestions in Mind-Me's own dark theme" loading="lazy"></a><figcaption>Mind-Me</figcaption></figure>
+    <figure><a href="img/tokyo-night.png"><img src="img/tokyo-night-detail.png" width="520" height="400" alt="The same branch in the Tokyo Night theme" loading="lazy"></a><figcaption>Tokyo Night</figcaption></figure>
+    <figure><a href="img/catppuccin-latte.png"><img src="img/catppuccin-latte-detail.png" width="520" height="400" alt="The same branch in the light Catppuccin Latte theme" loading="lazy"></a><figcaption>Catppuccin Latte</figcaption></figure>
+  </div>
+  <p class="small center">Click a picture to see the whole window.</p>
+</section>
+
+<section id="pricing">
+  <h2>Pricing</h2>
+  <div class="grid two">
+    <div class="card price" id="get">
+      <h3>Ready to run</h3>
+      <p class="amount">Free <span>during the beta</span></p>
+      <p>Then <strong>$20 once</strong> for every 1.x release. No subscription: you bring your own AI, so there is nothing to bill monthly. Card or UPI.</p>
+      <a class="button primary" href="#releases">Get the beta</a><!-- STORE -->
+    </div>
+    <div class="card price">
+      <h3>Build it yourself</h3>
+      <p class="amount">Free <span>always</span></p>
+      <p>Mind-Me is open source under the GPL-3.0. Clone it and run <code>cargo build --release</code>. That is the deal, not a loophole.</p>
+      <a class="button" href="https://github.com/fullstacksushil/mindme#run">Build instructions</a>
+    </div>
+  </div>
+</section>
+
+<section id="releases">
+  <h2>Releases</h2>
+  <div class="card release">
+    <p><strong>v0.1 beta</strong> · the first public build</p>
+    <p class="actions">
+      <a class="button primary" href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-macos-arm64.dmg">macOS (Apple silicon)</a><!-- STORE -->
+      <a class="button primary" href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-linux-x86_64.AppImage">Linux (AppImage)</a><!-- STORE -->
+      <a class="button" href="https://github.com/fullstacksushil/mindme/releases/latest">Release notes</a>
+    </p>
+    <p class="small">Linux also comes as a <a href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-linux-x86_64.tar.gz">tarball</a>. Intel Macs can build it from source for now.</p>
+  </div>
+</section>
+
+<section id="faq">
+  <h2>FAQ</h2>
+  <details><summary>How is this different from Obsidian?</summary>
+    <p>Obsidian's graph comes from links you make by hand. In Mind-Me the AI suggests branches and asks you questions, and you keep what fits. Use Obsidian once you know what you think, and Mind-Me while you're still finding out. A map is a plain Markdown file, so it can live in your Obsidian vault too.</p>
+  </details>
+  <details><summary>Which AI can I use?</summary>
+    <ul>
+      <li>Claude Pro or Max, through the <code>claude</code> command you are logged in to.</li>
+      <li>An API key for Anthropic, OpenAI or OpenRouter, or for another OpenAI-style URL.</li>
+      <li>Ollama, with a model that runs on your computer.</li>
+      <li>Any other command that reads a prompt and prints a reply.</li>
+    </ul>
+    <p>The first launch asks you to pick one. You can add more in Settings.</p>
+  </details>
+  <details><summary>What does Mind-Me send, and where?</summary>
+    <p>Mind-Me has no servers, so nothing goes to us. Your maps stay as Markdown files on your computer. Mind-Me sends data only to these places:</p>
+    <ul>
+      <li><strong>The AI you picked:</strong> the names of the current node and the nodes above it, and your Grill me answers. Learn more, Examples and Discuss also send that node's note and your recent Discuss messages. Writing guides you turned on go with them.</li>
+      <li><strong>Wikipedia and Wikimedia Commons:</strong> the names of the current node and its parent, to find its card and pictures. To stop this, turn off Wikipedia card in Settings, Notes.</li>
+      <li><strong>The sites a note links to:</strong> Mind-Me opens each link once, to check that it still works.</li>
+      <li><strong>The address of a picture in a note:</strong> Mind-Me downloads the picture to show it.</li>
+    </ul>
+  </details>
+  <details><summary>macOS says it cannot check Mind-Me. What do I do?</summary>
+    <p>Beta builds are not signed yet. The first time, right-click Mind-Me and choose Open. Or open System Settings, go to Privacy &amp; Security, and click Open Anyway. Signed builds come with version 1.0.</p>
+  </details>
+  <details><summary>Does the $20 include updates?</summary>
+    <p>Yes. $20 gets you every 1.x release, and you keep each one. There is no license key. Version 2.0 may be a paid upgrade.</p>
+  </details>
+  <details><summary>Does it run on Windows?</summary>
+    <p>Not yet. macOS and Linux come first.</p>
+  </details>
+</section>
+</main>
+
+<footer>
+  <p><a href="https://github.com/fullstacksushil/mindme">GitHub</a> · <a href="https://github.com/fullstacksushil/mindme/blob/master/LICENSE">GPL-3.0</a> · <a href="https://github.com/fullstacksushil/mindme/issues">Contact and issues</a></p>
+  <p class="small">Mind-Me is free software. Forks are welcome under another name.</p>
+</footer>
+</body>
+</html>

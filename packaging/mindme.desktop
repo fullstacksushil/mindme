@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Mind-Me
+Comment=A mind map where the AI suggests branches and you keep the ones you like
+Exec=mindme %F
+Icon=mindme
+Terminal=false
+Categories=Office;Productivity;
+MimeType=text/markdown;
+StartupWMClass=mindme

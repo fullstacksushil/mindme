@@ -1,0 +1,59 @@
+[package]
+name = "mindme"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+description = "A native mind map: type an idea, keep the AI's suggestions you like. Maps are plain Markdown."
+repository = "https://github.com/fullstacksushil/mindme"
+
+[dependencies]
+eframe = "0.37.0"
+serde_json = "1.0.154"
+egui_commonmark = { version = "0.26.0", default-features = false, features = ["pulldown_cmark"] }
+rfd = "0.17.2"
+pollster = "0.4"
+egui_extras = { version = "0.37.0", default-features = false, features = ["image"] }
+# Already built by eframe's system fonts; pinned to its 0.11 so no second copy is compiled.
+fontique = { version = "0.11", default-features = false, features = ["system", "fontconfig-dlopen"] }
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
+
+# cargo-packager: the macOS .app and dmg, and the Linux AppImage. CI builds the binary first, so there is no
+# before-packaging command. See .github/workflows/release.yml.
+[package.metadata.packager]
+product-name = "Mind-Me"
+identifier = "dev.fullstacksushil.mindme"
+icons = ["assets/icon.png"]
+category = "Productivity"
+copyright = "Copyright © 2026 Sushil Singh. GPL-3.0-or-later."
+resources = ["LICENSE", "THIRD-PARTY-NOTICES.md"]
+
+[package.metadata.packager.macos]
+minimum-system-version = "11.0"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "s"
+panic = "abort"
+
+[dev-dependencies]
+egui_kittest = { version = "0.37.0", features = ["eframe", "snapshot", "wgpu"] }
+
+# The browser playground, built into site/try/ by `scripts/web.sh`. It leaves out the emoji and math fonts to stay small,
+# and calls the visitor's AI with the browser's fetch.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ureq = { version = "3.5.0", features = ["json"] }
+# The emoji fonts carry symbols such as the copy icon on Markdown code blocks.
+egui = { version = "0.37.0", features = ["monochrome_emoji_fonts"] }
+# LaTeX math in notes: parse, lay out, and draw to a PNG with its own embedded KaTeX fonts.
+ratex-parser = "0.1.15"
+ratex-layout = "0.1.15"
+ratex-types = "0.1.15"
+ratex-render = { version = "0.1.15", features = ["embed-fonts"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# No TLS in the browser build: it never reaches the network, so this only keeps the native code compiling.
+ureq = { version = "3.5.0", default-features = false, features = ["json"] }
+wasm-bindgen-futures = "0.4"
+ehttp = "0.7"

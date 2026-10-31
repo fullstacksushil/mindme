@@ -1,0 +1,87 @@
+/* Mind-Me's own dark theme: canvas, panel, trail (accent), text and hint colors from assets/themes/mindme.toml. */
+:root {
+  --canvas: #0e1016;
+  --panel: #1b1b1b;
+  --raised: #2c2a27;
+  --accent: #e6b45a;
+  --text: #d7d7d7;
+  --strong: #ffffff;
+  --hint: #96a0b9;
+  --line: #3a3530;
+  --ink-on-accent: #1b1408;
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif;
+  color: var(--text);
+  background: var(--canvas);
+  line-height: 1.55;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: var(--accent); }
+code { background: var(--raised); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+h1, h2, h3 { color: var(--strong); line-height: 1.2; margin: 0 0 0.5em; text-wrap: balance; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); letter-spacing: -0.02em; }
+h2 { font-size: 1.7rem; margin-bottom: 1em; }
+h3 { font-size: 1.1rem; }
+.small, figcaption { color: var(--hint); font-size: 0.9rem; }
+
+.top { display: flex; justify-content: space-between; align-items: center; padding: 1rem clamp(1rem, 4vw, 3rem); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 0.6rem; color: var(--strong); font-weight: 600; text-decoration: none; }
+.top nav a { color: var(--text); text-decoration: none; margin-left: 1.5rem; }
+.top nav a:hover { color: var(--accent); }
+
+main { max-width: 1120px; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 3rem); }
+section { padding: 4.5rem 0; border-bottom: 1px solid var(--line); }
+section:last-child { border-bottom: 0; }
+
+/* One message, one picture: the pitch on the left, the map it describes on the right. */
+.hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 3rem; align-items: center; padding: 5rem 0; }
+.hero h1 { font-size: clamp(2.1rem, 4vw, 3.2rem); letter-spacing: -0.025em; margin-bottom: 1.4rem; }
+.hero .setup { display: block; font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 500; letter-spacing: -0.01em; color: var(--text); line-height: 1.35; margin-bottom: 0.9rem; }
+.lead { font-size: 1.2rem; max-width: 34rem; margin: 0 0 2rem; text-wrap: balance; }
+.actions { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 0; }
+.hero .small { margin: 1rem 0 0; }
+/* The crop's background is the app canvas, so fading its edges lets the map sit on the page with no frame. */
+.trail { margin: 0; text-align: center; }
+.trail img { width: 100%; height: auto; display: block; -webkit-mask-image: radial-gradient(closest-side, #000 84%, transparent); mask-image: radial-gradient(closest-side, #000 84%, transparent); }
+.button { display: inline-block; padding: 0.7rem 1.3rem; border-radius: 8px; background: var(--raised); color: var(--strong); text-decoration: none; font-weight: 600; }
+.button.primary { background: var(--accent); color: var(--ink-on-accent); }
+.button:hover { filter: brightness(1.1); }
+.shot { margin: 3rem 0 0; text-align: center; }
+.shot video, .themes img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; }
+
+.steps { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; counter-reset: step; }
+.steps li { counter-increment: step; }
+.steps li::before { content: counter(step); display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--accent); color: var(--ink-on-accent); font-weight: 700; margin-bottom: 0.8rem; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.grid.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1.4rem; }
+.card p:last-child { margin-bottom: 0; }
+.themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 2rem; }
+.themes figure { margin: 0; text-align: center; }
+.center { text-align: center; }
+
+.price .amount { font-size: 2rem; color: var(--strong); font-weight: 700; margin: 0.2rem 0 0.6rem; }
+.price .amount span { font-size: 1rem; color: var(--hint); font-weight: 400; }
+.release .actions { justify-content: flex-start; }
+
+details { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 0.7rem; }
+summary { cursor: pointer; color: var(--strong); font-weight: 600; }
+details p, details ul { margin: 0.8rem 0 0; max-width: 68ch; }
+details ul { padding-left: 1.2rem; }
+details li + li { margin-top: 0.4rem; }
+
+footer { text-align: center; padding: 2.5rem 1rem; border-top: 1px solid var(--line); }
+footer a { margin: 0 0.3rem; }
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; gap: 2rem; padding: 3rem 0; }
+}
+@media (max-width: 640px) {
+  /* The links wrap under the name instead of hiding, so Pricing and the FAQ stay one tap away. */
+  .top { flex-wrap: wrap; gap: 0.6rem; }
+  .top nav { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; }
+  .top nav a { margin-left: 0; padding: 0.3rem 0; }
+
+}

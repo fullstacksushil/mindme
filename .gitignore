@@ -1,0 +1,17 @@
+/target
+# Built by scripts/web.sh, and by the pages workflow on deploy.
+site/try/mindme.js
+site/try/mindme_bg.wasm
+# Local agent, design-tool and planning files, kept out of the public repo.
+/.claude/
+/.impeccable/
+/.scratch/
+/skills/
+/HANDOFF.md
+/DESIGN.md
+/PRODUCT.md
+/map.md
+/SPEC.md
+/DECISIONS.md
+/CLAUDE.md
+/docs/
