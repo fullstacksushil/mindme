@@ -61,6 +61,10 @@ impl<T: Send + 'static> Cache<T> {
     fn get(&mut self, key: &str, ctx: &egui::Context, pending: T, fetch: fn(&str, &egui::Context) -> T) -> &T {
         self.got.extend(self.rx.try_iter());
         self.got.entry(key.to_owned()).or_insert_with(|| {
+            // The browser playground can start no thread, and its fetches answer at once without the network.
+            if cfg!(target_arch = "wasm32") {
+                return fetch(key, ctx);
+            }
             let (key, ctx, tx) = (key.to_owned(), ctx.clone(), self.tx.clone());
             std::thread::spawn(move || {
                 let value = fetch(&key, &ctx);
@@ -110,7 +114,7 @@ pub enum Link {
     Checking,
     Ok,
     Dead(String),
-    /// Plain `http`, or an address on the user's own machine or network, which the app never requests.
+    /// Plain `http`, or an address on the user's own machine or network, which the app never requests. Every link in the playground.
     Unchecked,
 }
 

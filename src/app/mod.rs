@@ -28,11 +28,10 @@ use footer::Footer;
 use settings::GraphSettings;
 use widgets::palette;
 
-/// "Mind-Me v0.1", from the version in `Cargo.toml`. Shown in the app's own title bar, since tiling window
-/// managers such as Hyprland draw none, and as the window title.
+/// "Mind-Me v0.1.2", the whole version from `Cargo.toml`, so a bug report names the exact build. Shown in the app's own
+/// title bar, since tiling window managers such as Hyprland draw none, and as the window title.
 pub(crate) fn title() -> String {
-    let version: Vec<&str> = env!("CARGO_PKG_VERSION").split('.').take(2).collect();
-    format!("Mind-Me v{}", version.join("."))
+    concat!("Mind-Me v", env!("CARGO_PKG_VERSION")).into()
 }
 
 pub(crate) struct App {

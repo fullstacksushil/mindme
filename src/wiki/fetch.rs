@@ -43,7 +43,7 @@ pub fn bitmaps(json: &Value) -> Vec<String> {
 /// The article's own pictures first, then a Wikimedia Commons search for its title, up to `PICTURES`.
 /// shortcut: keeps the API's alphabetical order, not the article's, and downloads them serially before any shows, rank and stream them if that feels slow.
 pub(super) fn fetch_images(title: &str, ctx: &egui::Context) -> Vec<String> {
-    if cfg!(test) {
+    if cfg!(test) || cfg!(target_arch = "wasm32") {
         return Vec::new();
     }
     let agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(15))).user_agent(AGENT).build().new_agent();
@@ -85,8 +85,8 @@ pub fn markdown(extract: &str) -> String {
 }
 
 pub(super) fn fetch_article(title: &str, _: &egui::Context) -> Result<String, &'static str> {
-    if cfg!(test) {
-        return Err("Offline in tests.");
+    if cfg!(test) || cfg!(target_arch = "wasm32") {
+        return Err("Offline in tests and in the playground.");
     }
     let agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(20))).user_agent(AGENT).build().new_agent();
     let url = format!("https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&redirects=1&titles={}&format=json&formatversion=2", encode(title));
@@ -96,7 +96,7 @@ pub(super) fn fetch_article(title: &str, _: &egui::Context) -> Result<String, &'
 
 /// Sends `HEAD` first. Some servers refuse `HEAD`, so those receive a `GET`.
 pub(super) fn check(url: &str, _: &egui::Context) -> Link {
-    if !checkable(url) {
+    if !checkable(url) || cfg!(target_arch = "wasm32") {
         return Link::Unchecked;
     }
     if cfg!(test) {
@@ -128,8 +128,8 @@ pub(super) fn checkable(url: &str) -> bool {
 }
 
 pub(super) fn fetch(query: &str, ctx: &egui::Context) -> Result<Vec<Card>, &'static str> {
-    if cfg!(test) {
-        return Err("Offline in tests.");
+    if cfg!(test) || cfg!(target_arch = "wasm32") {
+        return Err("Offline in tests and in the playground.");
     }
     let agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(15))).user_agent(AGENT).build().new_agent();
     let url = format!(

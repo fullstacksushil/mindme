@@ -111,7 +111,10 @@ impl GraphSettings {
             ui.radio_value(&mut self.mono, false, "Sans");
             ui.radio_value(&mut self.mono, true, "Mono");
         });
-        ui.checkbox(&mut self.wiki, "Wikipedia card").on_hover_text("Sends the node's name to Wikipedia");
+        // The playground cannot fetch from Wikipedia.
+        if !cfg!(target_arch = "wasm32") {
+            ui.checkbox(&mut self.wiki, "Wikipedia card").on_hover_text("Sends the node's name to Wikipedia");
+        }
         if !skills.is_empty() {
             ui.separator();
             heading(ui, "Writing guides");

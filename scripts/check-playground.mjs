@@ -1,5 +1,5 @@
 // Checks the browser playground in headless Chromium, through the DevTools protocol: New saves a map, Open copies a
-// picked file in without overwriting a kept one, and a full storage says so. Exits 1 on the first failure.
+// picked file in without overwriting a kept one, a note with a link does not crash it, and a full storage says so. Exits 1 on the first failure.
 // Run after `sh scripts/web.sh`, from the repo: `node scripts/check-playground.mjs`. Needs Node 22+ and Chromium
 // (`CHROMIUM=/path/to/chrome` picks another one).
 import { spawn } from "node:child_process";
@@ -20,7 +20,8 @@ const server = createServer((req, res) => {
 }).listen(0);
 const temp = mkdtempSync(join(tmpdir(), "mindme-check-"));
 const picked = join(temp, "check.md");
-writeFileSync(picked, "# Go\n> A language from Google.\n- Goroutines\n");
+// The note's link sends the opened map's topic panel through the link check, which once started a thread and crashed.
+writeFileSync(picked, "# Go\n> A language from Google. See https://go.dev\n- Goroutines\n");
 // Bigger than what the filled storage has left.
 const big = join(temp, "big.md");
 writeFileSync(big, "# Big\n" + "- branch\n".repeat(8000));
@@ -75,6 +76,7 @@ const open = async (file) => {
 };
 
 await send("Page.enable");
+await send("Runtime.enable");
 await send("Page.setInterceptFileChooserDialog", { enabled: true });
 const { port } = server.address();
 await send("Page.navigate", { url: `http://127.0.0.1:${port}/try/` });
@@ -95,6 +97,9 @@ await until("New did not save a map as untitled.md", async () => (await run(`loc
 await open(picked);
 await until("Open did not copy the file in as check-2.md", async () => (await run(`localStorage.getItem("map:/check-2.md")`)) === readFileSync(picked, "utf8"));
 check((await run(`localStorage.getItem("map:/check.md")`)) === "# Kept\n", "Open overwrote the kept check.md");
+await sleep(1000);
+const crash = events.find((e) => e.method === "Runtime.exceptionThrown" || (e.method === "Runtime.consoleAPICalled" && e.params.args.some((a) => String(a.value).includes("panicked"))));
+check(!crash, `the playground crashed: ${String(JSON.stringify(crash?.params)).slice(0, 300)}`);
 
 // Fill the storage, then open again: the browser says why nothing opened.
 await run(`(() => { let s = "x".repeat(1 << 20), n = 0; try { for (;;) localStorage.setItem("fill" + n++, s); } catch {} try { for (;;) localStorage.setItem("fill" + n++, "x".repeat(1 << 12)); } catch {} return n; })()`);
@@ -102,4 +107,4 @@ await open(big);
 await until("a full storage showed no message", async () => events.some((e) => e.method === "Page.javascriptDialogOpening" && e.params.message.includes("could not be opened")));
 await send("Page.handleJavaScriptDialog", { accept: true });
 
-done(0, "OK: New saves, Open copies without overwriting, a full storage says so.");
+done(0, "OK: New saves, Open copies without overwriting, a note with a link opens, a full storage says so.");

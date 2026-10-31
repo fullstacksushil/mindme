@@ -130,7 +130,7 @@ fn ghosts_use_the_ghost_model_and_prose_the_picked_one() {
 fn the_title_bar_keys_by_task_and_the_empty_map_hint() {
     let (mut harness, _) = harness("chrome");
     harness.run();
-    assert!(shows(&harness, &format!("Mind-Me v{}", env!("CARGO_PKG_VERSION").rsplitn(2, '.').last().unwrap())), "the title bar names the app and version");
+    assert!(shows(&harness, concat!("Mind-Me v", env!("CARGO_PKG_VERSION"))), "the title bar names the app and its whole version");
     harness.get_by_role(egui::accesskit::Role::TextInput).type_text("Rust");
     harness.key_press(Key::Enter);
     wait_for(&mut harness, "suggestion: Alpha");
