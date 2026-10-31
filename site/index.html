@@ -98,7 +98,7 @@
 <section id="releases">
   <h2>Releases</h2>
   <div class="card release">
-    <p><strong>v0.1 beta</strong> · the first public build</p>
+    <p><strong>v0.1 beta</strong> · now on Windows too</p>
     <p class="actions">
       <a class="button primary" href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-macos-arm64.dmg">macOS (Apple silicon)</a><!-- STORE -->
       <a class="button primary" href="https://github.com/fullstacksushil/mindme/releases/latest/download/mindme-linux-x86_64.AppImage">Linux (AppImage)</a><!-- STORE -->
@@ -117,6 +117,7 @@
   <details><summary>Which AI can I use?</summary>
     <ul>
       <li>Claude Pro or Max, through the <code>claude</code> command you are logged in to.</li>
+      <li>ChatGPT or an OpenAI key, through the <code>codex</code> command you are logged in to.</li>
       <li>An API key for Anthropic, OpenAI or OpenRouter, or for another OpenAI-style URL.</li>
       <li>Ollama, with a model that runs on your computer.</li>
       <li>Any other command that reads a prompt and prints a reply.</li>
@@ -126,7 +127,7 @@
   <details><summary>What does Mind-Me send, and where?</summary>
     <p>Mind-Me has no servers, so nothing goes to us. Your maps stay as Markdown files on your computer. Mind-Me sends data only to these places:</p>
     <ul>
-      <li><strong>The AI you picked:</strong> the names of the current node and the nodes above it, and your Grill me answers. Learn more, Examples and Discuss also send that node's note and your recent Discuss messages. Writing guides you turned on go with them.</li>
+      <li><strong>The AI you picked:</strong> the names of the current node and the nodes above it, and your Grill me answers. Learn more, Examples and Discuss also send that node's note and your recent Discuss messages. Writing guides you turned on go with them. Codex can also read files on your computer if it decides to. Mind-Me starts it in an empty folder to make that unlikely.</li>
       <li><strong>Wikipedia and Wikimedia Commons:</strong> the names of the current node and its parent, to find its card and pictures. To stop this, turn off Wikipedia card in Settings, Notes.</li>
       <li><strong>The sites a note links to:</strong> Mind-Me opens each <code>https</code> link once, to check that it still works. It never opens links to your own computer or network.</li>
       <li><strong>The address of a picture in a note:</strong> Mind-Me downloads the picture to show it.</li>

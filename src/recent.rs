@@ -6,7 +6,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const KEEP: usize = 10;
+/// The browser lists every map it keeps, since there they exist nowhere else.
+const KEEP: usize = if cfg!(target_arch = "wasm32") { usize::MAX } else { 10 };
 
 /// A missing or unreadable file is an empty list: forgetting recent files loses nothing.
 pub fn load(file: &Path) -> Vec<PathBuf> {

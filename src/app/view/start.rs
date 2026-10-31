@@ -124,7 +124,9 @@ impl View {
                 for path in recent.iter().take(6) {
                     let name = path.file_name().map_or(String::new(), |f| f.to_string_lossy().into_owned());
                     let folder = path.parent().and_then(|p| p.file_name()).map_or(String::new(), |f| f.to_string_lossy().into_owned());
-                    if card(ui, 300.0, &name, &format!("{folder} · {}", edited(path)), &path.display().to_string()) {
+                    // The browser keeps maps in its storage, with no folder or modified time.
+                    let about = if cfg!(target_arch = "wasm32") { "in this browser".to_owned() } else { format!("{folder} · {}", edited(path)) };
+                    if card(ui, 300.0, &name, &about, &path.display().to_string()) {
                         *file = Some(OpenFile::Path(path.clone()));
                     }
                 }

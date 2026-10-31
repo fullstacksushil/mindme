@@ -60,7 +60,8 @@ impl App {
                                 if ui.button("Copy map as JSON").clicked() {
                                     ui.ctx().copy_text(map.to_json());
                                 }
-                                if ui.button("Export…").on_hover_text("Save as .md for Markdown or .json for JSON").clicked() {
+                                let how = if cfg!(target_arch = "wasm32") { "Download it as Markdown. Maps here live only in this browser" } else { "Save as .md for Markdown or .json for JSON" };
+                                if ui.button("Export…").on_hover_text(how).clicked() {
                                     export = Some((self.docs[self.active].name(), map.to_markdown(), map.to_json()));
                                 }
                             }
@@ -102,7 +103,11 @@ impl App {
         if let Some(file) = file {
             self.open_file(file, ui.ctx());
         }
-        // shortcut: no export in the browser playground, download the file there if visitors ask for it
+        // The browser downloads the Markdown, the format the playground reads back with Open.
+        #[cfg(target_arch = "wasm32")]
+        if let Some((name, md, _)) = export {
+            crate::web::download(&name, &md);
+        }
         #[cfg(not(target_arch = "wasm32"))]
         if let Some((name, md, json)) = export {
             let dialog = rfd::AsyncFileDialog::new().add_filter("Markdown", &["md"]).add_filter("JSON", &["json"]).set_file_name(name);

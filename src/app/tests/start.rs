@@ -233,6 +233,9 @@ fn with_no_model_the_app_opens_on_setup_and_saves_the_choice() {
     });
     harness.run();
     assert!(shows(&harness, "Welcome to Mind-Me") && !shows(&harness, "Cancel"), "nothing else works yet, so there is no way back");
+    harness.get_by_label("OpenAI Codex").click();
+    harness.run();
+    assert!(shows(&harness, "The codex command is not on your PATH. Install Codex and run codex login first."), "tests never look on PATH");
     harness.get_by_label("Another command").click();
     harness.run();
     harness.get_by_role(egui::accesskit::Role::TextInput).click();

@@ -16,9 +16,9 @@ A mind map that thinks with you. Type an idea, and the AI suggests branches. Cli
 - **Learn a new topic fast.** Type a topic and press Ctrl+Enter. The AI draws the whole topic as a map, with a short note and sources on each branch.
 - **Go deeper where you want.** On any branch, ask for more detail, examples, or a conversation with the AI.
 - **Your maps are yours.** Each map is a plain text file on your computer, in Markdown, a simple text format. Any text editor can open it, and so can Obsidian. Mind-Me has no account and no server.
-- **Use the AI you already have.** Claude Pro or Max, an API key, or a free model that runs on your own computer.
+- **Use the AI you already have.** Claude Pro or Max, ChatGPT through Codex, an API key, or a free model that runs on your own computer.
 
-Try it in your browser first: <https://fullstacksushil.github.io/mindme-site/try/>
+Try it in your browser first: <https://mindme.cc/try/>
 
 ## Install
 
@@ -61,6 +61,7 @@ Each file opens in its own tab. With no file name, Mind-Me opens `map.md`.
 The first time you open Mind-Me, it asks you to pick an AI:
 
 - **Claude Pro or Max**, if the `claude` command is installed and you are logged in.
+- **OpenAI Codex**, if the `codex` command is installed. Run `codex login` first, with ChatGPT or an API key.
 - **An API key** from Anthropic, OpenAI, OpenRouter, or another service that works like OpenAI.
 - **Ollama**, a free program that runs AI models on your own computer.
 - **Any other command** that reads a question and prints an answer.
@@ -158,7 +159,7 @@ Building from the source code is always free. The ready-made apps are free durin
 **What does Mind-Me send, and where?**
 Mind-Me has no servers, so nothing goes to us. It sends data only to these places:
 
-- The AI you picked. It gets the names of the current branch and the branches above it, and your Grill me answers. When you ask about a branch, it also gets that branch's note.
+- The AI you picked. It gets the names of the current branch and the branches above it, and your Grill me answers. When you ask about a branch, it also gets that branch's note. Codex can also read files on your computer if it decides to. Mind-Me starts it in an empty folder to make that unlikely.
 - Wikipedia, to show a card and pictures for the current branch. Turn this off in Settings, Notes.
 - The web pages a note links to. Mind-Me checks once that each `https` link still works.
 - The address of a picture in a note, to show the picture.
@@ -191,7 +192,7 @@ Mind-Me is free software under the GNU General Public License, version 3 or late
 
 1. When dependencies change, make the license notices again. Install the tool with `cargo install cargo-about --features cli`. It fails if a dependency's license is not on the list in `about.toml`.
    `{ cat packaging/notices-head.md; cargo about generate about.hbs; } > THIRD-PARTY-NOTICES.md`
-2. Change `version` in `Cargo.toml` and commit. Then run `git tag v0.1.0 && git push --tags`.
+2. Change `version` in `Cargo.toml` and commit. Then tag it, for example `git tag v0.1.2 && git push --tags`.
 3. The `release` workflow builds the macOS dmg, the Linux AppImage and tarball, and the Windows zip. It puts them on a GitHub Release, and the website's download buttons link there.
 
 `GLOSSARY.md` lists the words the app and the code use.

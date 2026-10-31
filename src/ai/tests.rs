@@ -117,6 +117,44 @@ fn cli_closes_stdin_and_returns_stdout() {
 }
 
 #[test]
+#[cfg(unix)]
+fn codex_starts_in_an_empty_folder_of_its_own() {
+    // A stand-in `codex` that prints where it runs.
+    let dir = std::env::temp_dir().join(format!("mindme-fake-codex-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let codex = dir.join("codex");
+    std::fs::write(&codex, "#!/bin/sh\npwd\n").unwrap();
+    std::fs::set_permissions(&codex, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+    let go = std::sync::atomic::AtomicBool::new(false);
+    let ran_in = super::cli(codex.to_str().unwrap(), &[], "", super::ASK_TIMEOUT, &go).unwrap();
+    assert_eq!(std::path::Path::new(ran_in.trim()), std::env::temp_dir().join("mindme-codex").canonicalize().unwrap());
+    assert_eq!(super::cli("sh", &["-c".into(), "pwd".into()], "", super::ASK_TIMEOUT, &go).unwrap().trim(), std::env::current_dir().unwrap().to_str().unwrap(), "other commands keep the working folder");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn codex_events_give_the_reply_its_tokens_or_why_it_failed() {
+    let price = Price { input: 1.25, output: 10.0, cached: Some(0.125) };
+    let answered = [
+        r#"{"type":"thread.started","thread_id":"t1"}"#,
+        r#"{"type":"turn.started"}"#,
+        r#"{"type":"item.completed","item":{"id":"item_0","type":"reasoning","text":"thinking"}}"#,
+        r#"{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"{\"note\": \"About it.\", \"nodes\": [\"Alpha\"]}"}}"#,
+        r#"{"type":"turn.completed","usage":{"input_tokens":2000,"cached_input_tokens":1500,"output_tokens":40}}"#,
+    ]
+    .join("\n");
+    let (text, usage) = cli_reply(answered, &price).unwrap();
+    assert_eq!(text, r#"{"note": "About it.", "nodes": ["Alpha"]}"#);
+    assert_eq!((usage.input, usage.cached, usage.output), (2000, 1500, 40));
+    assert!((usage.cost - (500.0 * 1.25 + 1500.0 * 0.125 + 40.0 * 10.0) / 1e6).abs() < 1e-12);
+
+    // As a logged-out codex answers: it exits 1, with log lines on stderr and the reason in its events.
+    let failed = r#"printf '%s\n' '{"type":"thread.started","thread_id":"t2"}' '{"type":"turn.failed","error":{"message":"unexpected status 401 Unauthorized"}}'; echo 'ERROR codex_api: failed to connect' >&2; exit 1"#;
+    let go = std::sync::atomic::AtomicBool::new(false);
+    assert_eq!(super::cli("sh", &["-c".into(), failed.into()], "", super::ASK_TIMEOUT, &go), Err("unexpected status 401 Unauthorized".into()));
+}
+
+#[test]
 fn an_unnamed_model_gets_a_short_label() {
     let label = |cmd: &str| Model::new(Backend::cli(cmd).unwrap()).name;
     let claude = if std::env::var_os("ANTHROPIC_API_KEY").is_some() { "Claude API" } else { "Claude Pro/Max" };

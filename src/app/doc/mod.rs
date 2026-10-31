@@ -19,7 +19,11 @@ use request::{Msg, Reply, Request};
 /// `Ok(None)` starts an empty map: the file is missing or blank.
 /// A non-blank file with no `# title` is an error, because autosave would overwrite it.
 fn load(path: &Path) -> Result<Option<Map>, String> {
-    let md = match fs::read_to_string(path) {
+    #[cfg(target_arch = "wasm32")]
+    let read = crate::web::read(path).ok_or_else(|| io::Error::from(io::ErrorKind::NotFound));
+    #[cfg(not(target_arch = "wasm32"))]
+    let read = fs::read_to_string(path);
+    let md = match read {
         Ok(md) => md,
         Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
         Err(e) => return Err(format!("{}: {e}", path.display())),

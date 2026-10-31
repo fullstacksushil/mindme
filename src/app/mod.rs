@@ -113,6 +113,9 @@ impl App {
     pub(crate) fn new(config: ai::Config, docs: Vec<Doc>, dir: Option<PathBuf>) -> App {
         let footer = config.footer.as_deref().map_or(Footer::ALL, Footer::from);
         let recent = dir.as_ref().map(|d| recent::load(&d.join("recent"))).unwrap_or_default();
+        // The browser keeps no list of opens, but every map it keeps is one to reopen.
+        #[cfg(target_arch = "wasm32")]
+        let recent = crate::web::stored();
         let settings = dir.as_ref().map(|d| GraphSettings::load(&d.join("graph.json"))).unwrap_or_default();
         let (picked_tx, picked) = mpsc::channel();
         let themes = theme::themes(dir.as_deref());
@@ -181,9 +184,12 @@ impl App {
             }
             file => file,
         };
-        // shortcut: the browser playground has no file dialogs, so Open and New do nothing there; add upload and download if visitors look for them
+        // The browser has no paths on the visitor's disk: maps live in its storage, and Open copies picked files in.
         #[cfg(target_arch = "wasm32")]
-        let _ = (file, ctx);
+        match file {
+            OpenFile::New => self.open(crate::web::unused("untitled.md")),
+            _ => crate::web::pick(self.picked_tx.clone(), ctx.clone()),
+        }
         #[cfg(not(target_arch = "wasm32"))]
         self.pick(file, ctx);
     }

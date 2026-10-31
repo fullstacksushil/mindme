@@ -223,6 +223,9 @@ fn chat_reply(reply: &Value, price: &Price) -> Result<(String, Usage), String> {
 }
 
 fn cli_reply(out: String, price: &Price) -> Result<(String, Usage), String> {
+    if let Some(reply) = codex_reply(&out, price) {
+        return reply;
+    }
     let Ok(json) = serde_json::from_str::<Value>(&out) else { return Ok((out, Usage::default())) };
     let Some(result) = json["result"].as_str() else { return Ok((out, Usage::default())) };
     if json["is_error"].as_bool() == Some(true) {
@@ -238,8 +241,31 @@ fn cli_reply(out: String, price: &Price) -> Result<(String, Usage), String> {
     Ok((result.to_owned(), Usage { model, ..usage }))
 }
 
+/// `codex exec --json` prints one event per line. The last agent message is the reply, and `turn.completed` has the tokens.
+fn codex_reply(out: &str, price: &Price) -> Option<Result<(String, Usage), String>> {
+    let events: Vec<Value> = out.lines().filter_map(|l| serde_json::from_str(l).ok()).collect();
+    events.first().filter(|e| e["type"] == "thread.started")?;
+    let is = |e: &&Value, kind: &str| e["type"] == kind;
+    if let Some(failed) = events.iter().find(|e| is(e, "turn.failed")) {
+        return Some(Err(failed["error"]["message"].as_str().unwrap_or("Codex failed").into()));
+    }
+    let said = events.iter().rev().find(|e| is(e, "item.completed") && e["item"]["type"] == "agent_message");
+    let Some(text) = said.and_then(|e| e["item"]["text"].as_str()) else { return Some(Err("Codex gave no answer".into())) };
+    let usage = events.iter().find(|e| is(e, "turn.completed")).map(|e| &e["usage"]);
+    let count = |key: &str| usage.and_then(|u| u[key].as_u64()).unwrap_or(0);
+    // OpenAI counts cached input inside the input, as `Price::usage` expects.
+    Some(Ok((text.to_owned(), price.usage(count("input_tokens"), count("output_tokens"), count("cached_input_tokens"), None))))
+}
+
 fn cli(command: &str, args: &[String], prompt: &str, timeout: Duration, stop: &AtomicBool) -> Result<String, String> {
     let mut child = Command::new(command);
+    // Codex's agent can read files around it even when read-only, and the launcher starts Mind-Me in the home
+    // folder. So Codex starts in an empty folder of its own, with nothing there to look through.
+    if std::path::Path::new(command).file_stem().is_some_and(|s| s == "codex") {
+        let empty = std::env::temp_dir().join("mindme-codex");
+        let _ = std::fs::create_dir_all(&empty);
+        child.current_dir(empty);
+    }
     // A window app's child opens a console window of its own on Windows unless told not to.
     #[cfg(windows)]
     std::os::windows::process::CommandExt::creation_flags(&mut child, 0x0800_0000); // CREATE_NO_WINDOW
@@ -275,6 +301,10 @@ fn cli(command: &str, args: &[String], prompt: &str, timeout: Duration, stop: &A
     };
     let out = out.join().unwrap_or_default();
     if !status.success() {
+        // Codex says why in its events, under pages of log lines on stderr.
+        if let Some(Err(e)) = codex_reply(&out, &Price::default()) {
+            return Err(e);
+        }
         let err = err.join().unwrap_or_default();
         return Err(if err.trim().is_empty() { status.to_string() } else { err.trim().to_owned() });
     }

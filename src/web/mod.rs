@@ -7,11 +7,33 @@
 mod sample;
 
 #[cfg(target_arch = "wasm32")]
-pub(crate) use browser::{post, save_models, write};
+pub(crate) use browser::{download, pick, post, read, save_models, stored, unused, write};
 #[cfg(target_arch = "wasm32")]
 pub(crate) use sample::reply;
 #[cfg(target_arch = "wasm32")]
 pub use browser::start;
+
+/// `/name` for a map kept in the browser, or `/stem-2.ext`, `/stem-3.ext` and so on when `taken` already has it.
+/// An opened or new map never overwrites one the visitor already keeps.
+fn unused_in(name: &str, taken: impl Fn(&std::path::Path) -> bool) -> std::path::PathBuf {
+    let (stem, ext) = name.rsplit_once('.').unwrap_or((name, "md"));
+    let path = std::path::PathBuf::from(format!("/{name}"));
+    if !taken(&path) {
+        return path;
+    }
+    (2..).map(|n| std::path::PathBuf::from(format!("/{stem}-{n}.{ext}"))).find(|p| !taken(p)).unwrap()
+}
+
+#[cfg(test)]
+#[test]
+fn a_new_or_opened_map_never_takes_a_kept_name() {
+    let kept = ["/untitled.md", "/untitled-2.md", "/rust.md"];
+    let taken = |p: &std::path::Path| kept.iter().any(|k| std::path::Path::new(k) == p);
+    assert_eq!(unused_in("go.md", taken), std::path::Path::new("/go.md"));
+    assert_eq!(unused_in("untitled.md", taken), std::path::Path::new("/untitled-3.md"));
+    assert_eq!(unused_in("rust.md", taken), std::path::Path::new("/rust-2.md"));
+    assert_eq!(unused_in("notes", taken), std::path::Path::new("/notes"), "no extension, nothing taken");
+}
 
 /// The map the playground opens until the visitor changes it. site/try/ resets it by removing `map:/Atomic Habits.md`.
 const EXAMPLE: &str = include_str!("atomic-habits.md");
@@ -20,7 +42,7 @@ const EXAMPLE: &str = include_str!("atomic-habits.md");
 mod browser {
     use crate::{ai, app::{App, Doc}, map::Map};
     use eframe::{wasm_bindgen::JsCast, web_sys};
-    use std::{io, path::{Path, PathBuf}};
+    use std::{io, path::{Path, PathBuf}, sync::mpsc};
 
     /// One tab with the example, or the visitor's edits to it, on the page's `mindme` canvas.
     pub fn start() {
@@ -56,6 +78,53 @@ mod browser {
 
     fn key(path: &Path) -> String {
         format!("map:{}", path.display())
+    }
+
+    /// A map kept in the browser's storage.
+    pub(crate) fn read(path: &Path) -> Option<String> {
+        storage()?.get_item(&key(path)).ok()?
+    }
+
+    /// Every map kept in the browser's storage, for the start screen and the + menu's recent list.
+    /// shortcut: in the storage's order, not newest first; keep a list of opens if visitors keep many maps
+    pub(crate) fn stored() -> Vec<PathBuf> {
+        let Some(s) = storage() else { return Vec::new() };
+        (0..s.length().unwrap_or(0)).filter_map(|i| s.key(i).ok()?).filter_map(|k| k.strip_prefix("map:").map(PathBuf::from)).collect()
+    }
+
+    pub(crate) fn unused(name: &str) -> PathBuf {
+        super::unused_in(name, |p| read(p).is_some())
+    }
+
+    /// The browser's file picker. Each picked file is copied into the browser's storage, and its path goes to `tx`
+    /// for the app to open, as the desktop's dialog sends the paths it picked.
+    pub(crate) fn pick(tx: mpsc::Sender<Vec<PathBuf>>, ctx: eframe::egui::Context) {
+        wasm_bindgen_futures::spawn_local(async move {
+            let files = rfd::AsyncFileDialog::new().add_filter("Markdown", &["md", "markdown"]).pick_files().await.unwrap_or_default();
+            let mut paths = Vec::new();
+            for file in files {
+                let path = unused(&file.file_name());
+                // A file with no title line still goes in, so opening it shows why it is not a map.
+                match write(&path, &String::from_utf8_lossy(&file.read().await)) {
+                    Ok(()) => paths.push(path),
+                    // The app has no error line for a pick, so the browser says it.
+                    Err(e) => _ = web_sys::window().map(|w| w.alert_with_message(&format!("{} could not be opened: {e}.", file.file_name()))),
+                }
+            }
+            let _ = tx.send(paths);
+            ctx.request_repaint();
+        });
+    }
+
+    /// Hands the visitor `text` as a file named `name`, the way a page offers a download.
+    /// shortcut: a data URL, which browsers cap at a few MB; use a Blob through js-sys if maps grow that big
+    pub(crate) fn download(name: &str, text: &str) {
+        let link = web_sys::window().and_then(|w| w.document()).and_then(|d| d.create_element("a").ok()).and_then(|a| a.dyn_into::<web_sys::HtmlAnchorElement>().ok());
+        if let Some(a) = link {
+            a.set_href(&format!("data:text/markdown;charset=utf-8,{}", crate::wiki::encode(text)));
+            a.set_download(name);
+            a.click();
+        }
     }
 
     /// Saves a map in the browser's storage, where `start` finds it on the next visit.

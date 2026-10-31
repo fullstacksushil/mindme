@@ -13,6 +13,10 @@ use std::{
 /// The lean `claude -p` command from `README.md`: web tools on, Claude Code's other tools, servers and skills off.
 const CLAUDE: &str = "claude -p --output-format json --tools WebSearch,WebFetch --allowedTools WebSearch,WebFetch --strict-mcp-config --setting-sources local --disable-slash-commands";
 
+/// `codex exec` reading the prompt on stdin (`-`), as events Mind-Me reads the reply and tokens from. Read-only and
+/// leaving no session file, since every suggestion is one call. It works outside a Git repository, where maps live.
+const CODEX: &str = "codex exec --json --skip-git-repo-check --ephemeral --sandbox read-only --color never -";
+
 /// OpenAI-style chat endpoints, and a model each one serves, as the model box's hint.
 const PROVIDERS: [(&str, &str, &str); 4] = [
     ("Anthropic", "https://api.anthropic.com/v1/chat/completions", "claude-sonnet-5-5"),
@@ -24,6 +28,7 @@ const PROVIDERS: [(&str, &str, &str); 4] = [
 #[derive(Clone, Copy, PartialEq)]
 enum Choice {
     Claude,
+    Codex,
     Api,
     Ollama,
     Command,
@@ -39,6 +44,7 @@ pub(super) struct Setup {
     key: String,
     command: String,
     claude_found: bool,
+    codex_found: bool,
     /// Ollama's installed models, once its server answers.
     ollama: mpsc::Receiver<Vec<String>>,
     ollama_models: Option<Vec<String>>,
@@ -51,7 +57,8 @@ pub(super) struct Setup {
 impl Setup {
     pub(super) fn new(first: bool) -> Setup {
         // Never in tests, so no test can start a real, billed claude call.
-        let claude_found = !cfg!(test) && std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join("claude").is_file() || d.join("claude.exe").is_file()));
+        let on_path = |name: &str| !cfg!(test) && std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join(name).is_file() || d.join(format!("{name}.exe")).is_file()));
+        let (claude_found, codex_found) = (on_path("claude"), on_path("codex"));
         let (tx, ollama) = mpsc::channel();
         // The browser playground has no threads, and never shows setup since it has its model.
         if !cfg!(test) && !cfg!(target_arch = "wasm32") {
@@ -63,8 +70,8 @@ impl Setup {
                 }
             });
         }
-        let choice = if claude_found { Choice::Claude } else { Choice::Api };
-        Setup { first, choice, provider: 0, url: String::new(), model: String::new(), key: String::new(), command: String::new(), claude_found, ollama, ollama_models: None, test: None, tested: None, error: None }
+        let choice = if claude_found { Choice::Claude } else if codex_found { Choice::Codex } else { Choice::Api };
+        Setup { first, choice, provider: 0, url: String::new(), model: String::new(), key: String::new(), command: String::new(), claude_found, codex_found, ollama, ollama_models: None, test: None, tested: None, error: None }
     }
 
     /// The `config.json` entry for what is filled in, or none while something needed is empty.
@@ -72,6 +79,7 @@ impl Setup {
         let model = self.model.trim();
         Some(match self.choice {
             Choice::Claude => json!({ "name": "Claude Pro/Max", "cmd": CLAUDE }),
+            Choice::Codex => json!({ "name": "OpenAI Codex", "cmd": CODEX }),
             Choice::Command => json!({ "cmd": Some(self.command.trim()).filter(|c| !c.is_empty())? }),
             Choice::Ollama => json!({ "name": format!("Ollama {model}"), "model": Some(model).filter(|m| !m.is_empty())?, "url": ai::OLLAMA }),
             Choice::Api => {
@@ -108,6 +116,7 @@ impl App {
         let ollama = setup.ollama_models.is_some();
         for (choice, label, about) in [
             (Choice::Claude, format!("Claude Pro/Max{}", found(setup.claude_found)), "Uses the claude command you are logged in to. Web search is on."),
+            (Choice::Codex, format!("OpenAI Codex{}", found(setup.codex_found)), "Uses the codex command you are logged in to, with ChatGPT or an API key. Codex can read files on this computer."),
             (Choice::Api, "An API key".into(), "Anthropic, OpenAI, OpenRouter, or any OpenAI-style URL."),
             (Choice::Ollama, format!("Ollama{}", found(ollama)), "A model running on this computer. Free, no key."),
             (Choice::Command, "Another command".into(), "Any command that reads a prompt and prints a reply, such as llm."),
@@ -125,6 +134,8 @@ impl App {
         match setup.choice {
             Choice::Claude if !setup.claude_found => _ = ui.label(egui::RichText::new("The claude command is not on your PATH. Install Claude Code and log in first.").color(palette(ui).fail)),
             Choice::Claude => _ = ui.label(hint(ui, CLAUDE)),
+            Choice::Codex if !setup.codex_found => _ = ui.label(egui::RichText::new("The codex command is not on your PATH. Install Codex and run codex login first.").color(palette(ui).fail)),
+            Choice::Codex => _ = ui.label(hint(ui, CODEX)),
             Choice::Api => {
                 egui::ComboBox::from_label("Provider").selected_text(PROVIDERS[setup.provider].0).show_index(ui, &mut setup.provider, PROVIDERS.len(), |i| PROVIDERS[i].0);
                 if PROVIDERS[setup.provider].1.is_empty() {
