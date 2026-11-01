@@ -1,5 +1,5 @@
 use crate::app::settings::GraphSettings;
-use crate::app::widgets::{label, label_font, FAN, FLASH, GHOST_LINK};
+use crate::app::widgets::{compact, label, label_font, FAN, FLASH, GHOST_LINK};
 use crate::graph::{Graph, Spec};
 use crate::map::{Cmd, Layout, NodeId, Slot, Text};
 use crate::{ai, wiki};
@@ -45,6 +45,8 @@ pub(super) struct View {
     pub(super) hide_inspector: bool,
     /// The panels hidden before `\` hid both, restored by the next `\`.
     pub(super) panels: (bool, bool),
+    /// The first frame picked which panels show: none in a compact window, so a phone opens on the map.
+    pub(super) sized: bool,
     /// The inspector fills the window in a centered column, with no canvas behind it.
     pub(super) reading: bool,
     /// The new branch box's text while it is open.
@@ -110,9 +112,41 @@ impl View {
         if self.flash.as_ref().is_some_and(|f| now - f.start >= FLASH) {
             self.flash = None;
         }
-        if self.reading {
-            if !typing && ui.input(|i| i.key_pressed(Key::R) || i.key_pressed(Key::Escape)) {
+        let compact = compact(ui.ctx());
+        if !self.sized {
+            self.sized = true;
+            if compact {
+                (self.hide_outline, self.hide_inspector) = (true, true);
+            }
+        }
+        // A compact window has room for one panel, over the whole window, so the topic panel wins.
+        if compact && !self.hide_outline && !self.hide_inspector {
+            self.hide_outline = true;
+        }
+        if compact && !self.hide_outline {
+            let mut cmds = Vec::new();
+            if !typing && ui.input(|i| i.key_pressed(Key::Escape)) {
+                self.hide_outline = true;
+            }
+            let full = ui.available_rect_before_wrap();
+            ui.painter().rect_filled(full, 0.0, ui.visuals().panel_fill);
+            let mut menu = None;
+            // Picking a node goes back to the map, to show it there.
+            if self.outline_panel(&mut ui.new_child(egui::UiBuilder::new().max_rect(full.shrink(8.0))), layout, &mut cmds, &mut menu) {
+                self.hide_outline = true;
+            }
+            if let Some((id, pick)) = menu {
+                self.pick(ui.ctx(), layout, id, pick, &mut cmds);
+            }
+            self.confirm(ui.ctx(), layout, &mut cmds);
+            self.typed = ui.ctx().egui_wants_keyboard_input();
+            return cmds;
+        }
+        if self.reading || compact && !self.hide_inspector {
+            if !typing && self.reading && ui.input(|i| i.key_pressed(Key::R) || i.key_pressed(Key::Escape)) {
                 self.reading = false;
+            } else if !typing && ui.input(|i| i.key_pressed(Key::Escape)) {
+                self.hide_inspector = true;
             }
             let full = ui.available_rect_before_wrap();
             ui.painter().rect_filled(full, 0.0, ui.visuals().panel_fill);

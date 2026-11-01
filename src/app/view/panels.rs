@@ -81,30 +81,38 @@ fn drop_at(ui: &egui::Ui, layout: &Layout, response: &egui::Response, id: NodeId
 }
 
 impl View {
+    /// The outline's buttons and tree, in the side panel or, in a compact window, over the whole window.
+    /// True when a name in the tree was clicked.
+    pub(super) fn outline_panel(&mut self, ui: &mut egui::Ui, layout: &Layout, cmds: &mut Vec<Cmd>, menu: &mut Option<(NodeId, Pick)>) -> bool {
+        let compact = crate::app::widgets::compact(ui.ctx());
+        ui.horizontal(|ui| {
+            let all = layout.nodes.iter().all(|n| self.expanded.contains(&n.id) || layout.children(n.id).next().is_none());
+            let (icon, does) = if all { ("−", "Collapse all") } else { ("+", "Show all") };
+            let button = ui.small_button(icon).on_hover_text(does);
+            button.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, does));
+            if button.clicked() && all {
+                self.expanded.clear();
+                cmds.push(Cmd::Select(layout.nodes[0].id));
+            } else if button.clicked() {
+                self.expanded.extend(layout.nodes.iter().map(|n| n.id));
+            }
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let hide = if compact { ui.button("Map »") } else { ui.small_button("«") };
+                if hide.on_hover_text("Hide outline").clicked() {
+                    self.hide_outline = true;
+                }
+            });
+        });
+        ui.separator();
+        let before = cmds.len();
+        egui::ScrollArea::vertical().show(ui, |ui| outline(ui, layout, layout.nodes[0].id, &mut self.expanded, cmds, menu));
+        cmds[before..].iter().any(|c| matches!(c, Cmd::Select(_)))
+    }
+
     pub(super) fn shell(&mut self, ui: &mut egui::Ui, layout: &Layout, settings: &mut GraphSettings, skills: &mut [ai::Skill], cmds: &mut Vec<Cmd>) {
         let mut menu = None;
         if !self.hide_outline {
-            egui::Panel::left("outline").default_size(220.0).show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    let all = layout.nodes.iter().all(|n| self.expanded.contains(&n.id) || layout.children(n.id).next().is_none());
-                    let (icon, does) = if all { ("−", "Collapse all") } else { ("+", "Show all") };
-                    let button = ui.small_button(icon).on_hover_text(does);
-                    button.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, does));
-                    if button.clicked() && all {
-                        self.expanded.clear();
-                        cmds.push(Cmd::Select(layout.nodes[0].id));
-                    } else if button.clicked() {
-                        self.expanded.extend(layout.nodes.iter().map(|n| n.id));
-                    }
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.small_button("«").on_hover_text("Hide outline").clicked() {
-                            self.hide_outline = true;
-                        }
-                    });
-                });
-                ui.separator();
-                egui::ScrollArea::vertical().show(ui, |ui| outline(ui, layout, layout.nodes[0].id, &mut self.expanded, cmds, &mut menu));
-            });
+            egui::Panel::left("outline").default_size(220.0).show(ui, |ui| _ = self.outline_panel(ui, layout, cmds, &mut menu));
         }
         if !self.hide_inspector {
             egui::Panel::right("inspector").default_size(340.0).show(ui, |ui| self.inspector(ui, layout, settings, skills, cmds));

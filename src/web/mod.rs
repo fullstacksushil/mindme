@@ -55,6 +55,8 @@ mod browser {
         let md = storage().and_then(|s| s.get_item(&key(&path)).ok()?).unwrap_or_else(|| super::EXAMPLE.into());
         let mut doc = Doc::new(path, Map::parse(&md).or_else(|| Map::parse(super::EXAMPLE)));
         doc.unfold(2);
+        // The playground opens on the map alone. The Outline and Topic buttons bring the panels back.
+        doc.hide_panels();
         let mut written = ai::Model::new(ai::Backend::Cli { command: "playground".into(), args: Vec::new() });
         written.name = "Written ideas".into();
         // The visitor's own models come first, so the tab uses theirs.

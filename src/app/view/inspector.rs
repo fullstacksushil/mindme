@@ -72,7 +72,9 @@ impl View {
         ui.horizontal(|ui| {
             heading(ui, "Topic");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if !self.reading && ui.small_button("»").on_hover_text("Hide the topic panel").clicked() {
+                // A compact window shows the panel over the map, so its way back is a full-size button.
+                let compact = crate::app::widgets::compact(ui.ctx());
+                if !self.reading && (if compact { ui.button("Map »") } else { ui.small_button("»") }).on_hover_text("Hide the topic panel").clicked() {
                     self.hide_inspector = true;
                 }
                 ui.toggle_value(&mut self.reading, "Read").on_hover_text("Reading mode (R)");
