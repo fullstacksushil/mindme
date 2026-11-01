@@ -79,8 +79,9 @@ pub(crate) struct App {
     omarchy_checked: f64,
     /// The palette and zoom last handed to egui, so a change is applied once.
     applied: Option<theme::Palette>,
-    /// Whether the touch spacing was last applied, for a compact window, so a change is applied once.
-    spaced: Option<bool>,
+    /// Whether the touch spacing is applied, for a compact window, so a change is applied once. egui's own
+    /// spacing to start with, so a wide window never restyles.
+    spaced: bool,
     zoomed: f32,
     fonts: fonts::Fonts,
     /// Paths the file dialog thread picked, opened on the next frame.
@@ -148,7 +149,7 @@ impl App {
             omarchy: theme::omarchy(),
             omarchy_checked: 0.0,
             applied: None,
-            spaced: None,
+            spaced: false,
             zoomed: 1.0,
             fonts: fonts::Fonts::system(),
             picked_tx,
@@ -259,9 +260,9 @@ impl App {
             ctx.request_repaint();
         }
         let compact = widgets::compact(ctx);
-        if self.spaced != Some(compact) {
+        if self.spaced != compact {
             ctx.all_styles_mut(|s| widgets::touch_spacing(s, compact));
-            self.spaced = Some(compact);
+            self.spaced = compact;
             ctx.request_repaint();
         }
         self.fonts.install(ctx, &self.settings.text_font, &self.settings.code_font);
