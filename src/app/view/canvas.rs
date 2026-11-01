@@ -58,17 +58,29 @@ impl View {
         }
         // A fresh map shows how to grow it, until its first branch.
         if layout.nodes.len() == 1 {
-            let hint = "Click a suggestion to keep it · Tab adds your own · M for more";
+            let hint = if widgets::compact(ui.ctx()) {
+                "Tap a suggestion to keep it · Hold a node for more"
+            } else {
+                "Click a suggestion to keep it · Tab adds your own · M for more"
+            };
             corner("empty-hint", canvas.center_top() + Vec2::new(0.0, 12.0), egui::Align2::CENTER_TOP).show(ui.ctx(), |ui| ui.label(widgets::hint(ui, hint)));
         }
+        // A compact window opens one panel at a time, over the map.
+        let compact = widgets::compact(ui.ctx());
         if self.hide_outline {
             corner("show-outline", canvas.left_top() + margin, egui::Align2::LEFT_TOP).show(ui.ctx(), |ui| {
-                self.hide_outline = !ui.button("» Outline").clicked();
+                if ui.button("» Outline").clicked() {
+                    self.hide_outline = false;
+                    self.hide_inspector |= compact;
+                }
             });
         }
         if self.hide_inspector {
             corner("show-inspector", canvas.right_top() + Vec2::new(-8.0, 8.0), egui::Align2::RIGHT_TOP).show(ui.ctx(), |ui| {
-                self.hide_inspector = !ui.button("Topic «").clicked();
+                if ui.button("Topic «").clicked() {
+                    self.hide_inspector = false;
+                    self.hide_outline |= compact;
+                }
             });
         }
     }
@@ -134,7 +146,8 @@ impl View {
                 cmds.extend([Cmd::Select(node.id), Cmd::Reroll]);
             } else if response.double_clicked() {
                 cmds.push(Cmd::Select(node.id));
-                self.focus_name = true;
+                // On a phone, a double tap opens the topic to read. A focused name box would raise the keyboard over it.
+                self.focus_name = !widgets::compact(ui.ctx());
                 self.hide_inspector = false;
             } else if response.clicked() {
                 cmds.push(Cmd::Select(node.id));

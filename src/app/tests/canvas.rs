@@ -265,3 +265,41 @@ fn plus_zooms_in_even_on_a_small_fresh_map() {
     steps(&mut harness, 5);
     assert!(zoom(&harness) < fitted * 1.4, "- zooms back out");
 }
+
+#[test]
+fn a_phone_opens_on_the_map_and_shows_one_panel_at_a_time() {
+    let doc = Doc::new(temp("phone"), Map::parse("# Rust\n- Ownership\n- Cargo\n"));
+    let mut harness = Harness::builder().with_size(Vec2::new(390.0, 800.0)).with_max_steps(8).build_eframe(move |_| {
+        App::new(ai::Config { models: vec![fake_ai()], footer: None, skills: Vec::new(), ghosts: None }, vec![doc], None)
+    });
+    harness.run();
+    assert!(shows(&harness, "node: Rust") && shows(&harness, "» Outline") && shows(&harness, "Topic «"), "both panels start hidden");
+    assert!(harness.query_all_by_label_contains("Mind-Me v").next().is_none(), "no title bar on a phone");
+    assert!(shows(&harness, "Keys") && shows(&harness, "…"), "the footer keeps its buttons");
+    shot(&mut harness, "17-phone");
+
+    harness.get_by_label("» Outline").click();
+    harness.run();
+    assert!(!shows(&harness, "node: Rust") && shows(&harness, "Map »"), "the outline fills the window");
+    harness.get_by_label("Show all").click();
+    harness.run();
+    assert!(shows(&harness, "Map »"), "showing all stays in the outline");
+    shot(&mut harness, "17-phone-outline");
+    harness.get_by_label("Ownership").click();
+    harness.run();
+    assert!(shows(&harness, "node: Ownership"), "picking a name goes back to the map");
+    assert_eq!(doc_text(&harness), "Ownership");
+
+    harness.get_by_label("Topic «").click();
+    harness.run();
+    assert!(!shows(&harness, "node: Ownership") && !shows(&harness, "» Outline"), "the topic panel fills the window");
+    shot(&mut harness, "17-phone-topic");
+    harness.get_by_label("Map »").click();
+    harness.run();
+    assert!(shows(&harness, "node: Ownership"));
+}
+
+fn doc_text(harness: &Harness<App>) -> String {
+    let layout = doc(harness).map().unwrap().layout();
+    layout.node(layout.current).unwrap().text.as_str().to_owned()
+}

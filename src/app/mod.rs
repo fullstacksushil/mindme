@@ -79,6 +79,8 @@ pub(crate) struct App {
     omarchy_checked: f64,
     /// The palette and zoom last handed to egui, so a change is applied once.
     applied: Option<theme::Palette>,
+    /// Whether the touch spacing was last applied, for a compact window, so a change is applied once.
+    spaced: Option<bool>,
     zoomed: f32,
     fonts: fonts::Fonts,
     /// Paths the file dialog thread picked, opened on the next frame.
@@ -146,6 +148,7 @@ impl App {
             omarchy: theme::omarchy(),
             omarchy_checked: 0.0,
             applied: None,
+            spaced: None,
             zoomed: 1.0,
             fonts: fonts::Fonts::system(),
             picked_tx,
@@ -255,6 +258,12 @@ impl App {
             self.applied = Some(p);
             ctx.request_repaint();
         }
+        let compact = widgets::compact(ctx);
+        if self.spaced != Some(compact) {
+            ctx.all_styles_mut(|s| widgets::touch_spacing(s, compact));
+            self.spaced = Some(compact);
+            ctx.request_repaint();
+        }
         self.fonts.install(ctx, &self.settings.text_font, &self.settings.code_font);
         // egui's own Ctrl+= and Ctrl+- change the zoom; the Settings slider changes the setting.
         let zoom = ctx.zoom_factor();
@@ -309,9 +318,12 @@ impl eframe::App for App {
             }
         });
         let (open, new) = ui.input_mut(|i| (i.consume_key(Modifiers::CTRL, Key::O), i.consume_key(Modifiers::CTRL, Key::N)));
-        egui::Panel::top("title").show(ui, |ui| {
-            ui.vertical_centered(|ui| ui.label(widgets::hint(ui, title())));
-        });
+        // A phone has no window title to stand in for, and needs the height for the map.
+        if !widgets::compact(ui.ctx()) {
+            egui::Panel::top("title").show(ui, |ui| {
+                ui.vertical_centered(|ui| ui.label(widgets::hint(ui, title())));
+            });
+        }
         // With no model nothing else can work, so setup is the only screen until one is saved.
         if self.models.is_empty() && self.setup.is_none() {
             self.setup = Some(setup::Setup::new(true));

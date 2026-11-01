@@ -115,6 +115,13 @@ impl Doc {
         self.view.expanded.extend(open);
     }
 
+    /// Starts the tab with the outline and topic panel hidden, so the map has the whole window. Their buttons on the
+    /// canvas open them.
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) fn hide_panels(&mut self) {
+        (self.view.hide_outline, self.view.hide_inspector) = (true, true);
+    }
+
     /// A fresh tab with nothing typed yet, which an opened file may replace.
     pub(super) fn is_blank(&self) -> bool {
         matches!(self.stage, Stage::Start { .. })

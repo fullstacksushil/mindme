@@ -10,6 +10,25 @@ pub(super) const FLASH: f64 = 0.3;
 
 pub(super) use super::theme::Palette;
 
+/// Windows narrower than this, in points, are phones held upright: the side panels start hidden and open one at a
+/// time over the whole window, buttons grow to fit a finger, and hints talk about taps instead of keys.
+pub(super) const COMPACT: f32 = 700.0;
+
+pub(super) fn compact(ctx: &egui::Context) -> bool {
+    ctx.content_rect().width() < COMPACT
+}
+
+/// Bigger buttons and gaps in a compact window, so a finger hits what it aims at. egui's own spacing otherwise.
+pub(super) fn touch_spacing(style: &mut egui::Style, touch: bool) {
+    let normal = egui::style::Spacing::default();
+    let s = &mut style.spacing;
+    (s.interact_size, s.button_padding, s.item_spacing) = if touch {
+        (egui::vec2(40.0, 32.0), egui::vec2(10.0, 6.0), egui::vec2(10.0, 8.0))
+    } else {
+        (normal.interact_size, normal.button_padding, normal.item_spacing)
+    };
+}
+
 /// The palette `theme::apply` set. A bare `Ui`, as in a widget test, gets the default theme.
 pub(super) fn palette(ui: &egui::Ui) -> Palette {
     ui.data(|d| d.get_temp(egui::Id::NULL)).unwrap_or_else(super::theme::default_palette)
